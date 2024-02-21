@@ -64,7 +64,7 @@ def cli(*, debug: bool) -> None:
     help="Restart from a saved state. Otherwise will use the given input file(s)",
 )
 @click.argument(
-    "parquet-dir", required=True, type=click.Path(path_type=Path, exists=True, file_okay=False)
+    "parquet-dir", required=True, type=click.Path(path_type=Path, exists=True, file_okay=True)
 )
 def populate(parquet_dir: Path, *, restart: bool, queues: str) -> None:
     """
