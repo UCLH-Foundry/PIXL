@@ -32,7 +32,7 @@ logger.setLevel(os.environ.get("LOG_LEVEL", "WARNING"))
 
 
 async def process_message(message: Message) -> None:
-    logger.debug("Processing: %s", message)
+    logger.info("Processing: %s", message)
 
     study = ImagingStudy.from_message(message)
     orthanc_raw = PIXLRawOrthanc()
@@ -45,6 +45,8 @@ async def process_message(message: Message) -> None:
     if query_id is None:
         logger.error("Failed to find %s in the VNA", study)
         raise RuntimeError
+
+    logger.debug("Found study %s in cache", study)
 
     job_id = orthanc_raw.retrieve_from_remote(query_id=query_id)  # C-Move
     job_state = "Pending"
@@ -60,6 +62,7 @@ async def process_message(message: Message) -> None:
 
         await sleep(0.1)
         job_state = orthanc_raw.job_state(job_id=job_id)
+    logger.info("Finished processing: %s", message)
 
     return
 
