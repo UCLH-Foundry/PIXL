@@ -45,6 +45,6 @@ app.add_middleware(
 app.include_router(router)
 
 
-logger.info("Starting %s hasher-api %i...", icon, __version__)
+logger.info("Starting %s hasher-api %s...", icon, __version__)
 if settings.DEBUG:
     settings.dump_settings()
