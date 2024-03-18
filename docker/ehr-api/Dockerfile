@@ -44,6 +44,10 @@ RUN --mount=type=cache,target=/root/.cache \
     pip install core/ . && \
     if [ "$TEST" = "true" ]; then pip install core/[test] .[test]; fi
 
+ARG PIXL_USER_UID
+ARG PIXL_USER_GID
+RUN groupadd --gid $PIXL_USER_GID pixl && useradd --uid $PIXL_USER_UID --gid $PIXL_USER_GID pixl
+
 HEALTHCHECK CMD /usr/bin/curl -f http://0.0.0.0:8000/heart-beat || exit 1
 
 ENTRYPOINT ["uvicorn", "pixl_ehr.main:app", "--host", "0.0.0.0", "--port", "8000"]

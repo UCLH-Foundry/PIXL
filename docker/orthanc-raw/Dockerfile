@@ -21,6 +21,11 @@ ARG ORTHANC_RAW_MAXIMUM_STORAGE_SIZE
 RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get update && \
     apt-get install --yes --no-install-recommends python3-venv
+
+ARG PIXL_USER_UID
+ARG PIXL_USER_GID
+RUN groupadd --gid $PIXL_USER_GID pixl && useradd --uid $PIXL_USER_UID --gid $PIXL_USER_GID pixl
+
 RUN python3 -m venv /.venv
 
 # Install requirements before copying modules

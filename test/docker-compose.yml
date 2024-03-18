@@ -13,6 +13,10 @@
 #  limitations under the License.
 version: "3.8"
 
+x-pixl-uid-gid: &pixl-uid-gid
+    PIXL_USER_UID: ${PIXL_USER_UID}
+    PIXL_USER_GID: ${PIXL_USER_GID}
+
 volumes:
     vna-qr-data:
 
@@ -72,6 +76,8 @@ services:
     cogstack-api:
         container_name: system-test-cogstack
         build:
+            args:
+                <<: *pixl-uid-gid
             context: ./dummy-services/cogstack/
         healthcheck:
             test: ["CMD", "curl", "-f", "http://localhost:8000/heart-beat"]
@@ -80,3 +86,4 @@ services:
             retries: 5
         networks:
             pixl-net:
+        user: pixl

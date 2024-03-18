@@ -13,6 +13,10 @@
 #  limitations under the License.
 version: "3.8"
 
+x-pixl-uid-gid: &pixl-uid-gid
+  PIXL_USER_UID: 7001
+  PIXL_USER_GID: 7001
+
 volumes:
   orthanc-raw-data:
   vna-qr-data:
@@ -26,6 +30,7 @@ services:
       context: ../../
       dockerfile: ./docker/imaging-api/Dockerfile
       args:
+        <<: *pixl-uid-gid
         TEST: true
     depends_on:
       queue:
@@ -76,6 +81,8 @@ services:
     build:
       context: ../../
       dockerfile: ./docker/orthanc-raw/Dockerfile
+      args:
+        <<: *pixl-uid-gid
     environment:
       ORTHANC_NAME: "PIXL: Raw"
       ORTHANC_USERNAME: "orthanc"

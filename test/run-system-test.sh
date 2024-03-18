@@ -48,7 +48,16 @@ elif [ "$subcmd" = "teardown" ]; then
     teardown
 else
     setup
+
+    # These two variables are needed for creating the pixl user and group on the GHA runner.
+    # Don't worry about passing them into pytest if you're running pytest manually or through your
+    # IDE - they're only used inside an "if GITHUB_ACTIONS" block anyway.
+    # We could do this in the setup function, but we don't at that point know the location of the
+    # exports dir (how the exports dir is determined is due to change anyway)
+    source .env
+    export PIXL_USER_UID PIXL_USER_GID
     pytest --verbose --log-cli-level INFO
+
     echo FINISHED PYTEST COMMAND
     teardown
     echo SYSTEM TEST SUCCESSFUL

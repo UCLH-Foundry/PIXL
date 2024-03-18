@@ -26,9 +26,12 @@ x-proxy-common: &proxy-common
   https_proxy: *https-proxy
   NO_PROXY: *no-proxy
   no_proxy: *no-proxy
+x-pixl-uid-gid: &pixl-uid-gid
+  PIXL_USER_UID: ${PIXL_USER_UID}
+  PIXL_USER_GID: ${PIXL_USER_GID}
 
 x-build-args-common: &build-args-common
-  <<: [*proxy-common]
+  <<: [*proxy-common, *pixl-uid-gid]
 
 x-pixl-common-env: &pixl-common-env
   ENV: ${ENV}
@@ -100,6 +103,7 @@ services:
       - *logs-volume
     networks:
       - pixl-net
+    user: pixl
     healthcheck:
       test: ["CMD", "curl", "-f", "http://hasher-api:8000/heart-beat"]
       interval: 10s
@@ -278,6 +282,7 @@ services:
       retries: 5
     networks:
       - pixl-net
+    user: pixl
     # needed for testing under GHA (linux), so this container
     # can reach the test FTP server running on the docker host
     extra_hosts:
@@ -304,6 +309,7 @@ services:
       retries: 5
     networks:
       - pixl-net
+    user: pixl
     environment:
       <<: [*pixl-rabbit-mq, *proxy-common]
       ORTHANC_RAW_USERNAME: ${ORTHANC_RAW_USERNAME}

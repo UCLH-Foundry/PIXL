@@ -44,4 +44,8 @@ RUN --mount=type=cache,target=/root/.cache \
     pip install core/ . && \
     if [ "$TEST" = "true" ]; then pip install core/ .[test]; fi
 
+ARG PIXL_USER_UID
+ARG PIXL_USER_GID
+RUN groupadd --gid $PIXL_USER_GID pixl && useradd --uid $PIXL_USER_UID --gid $PIXL_USER_GID pixl
+
 ENTRYPOINT ["/app/scripts/migrate_and_run.sh"]

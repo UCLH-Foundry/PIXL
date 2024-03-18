@@ -24,6 +24,11 @@ RUN python3 -m venv /.venv
 # Install curl, used in system tests
 RUN apt-get --assume-yes install curl
 
+ARG PIXL_USER_UID
+ARG PIXL_USER_GID
+RUN echo JES $PIXL_USER_GID $PIXL_USER_UID JES WTF
+RUN groupadd --gid $PIXL_USER_GID pixl && useradd --uid $PIXL_USER_UID --gid $PIXL_USER_GID pixl
+
 # Install requirements before copying modules
 COPY ./pixl_core/pyproject.toml /pixl_core/pyproject.toml
 COPY ./pixl_dcmd/pyproject.toml /pixl_dcmd/pyproject.toml

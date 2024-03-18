@@ -24,6 +24,9 @@ RUN sed -i '/en_GB.UTF-8/s/^# //g' /etc/locale.gen && locale-gen
 # clean up
 RUN  apt-get autoremove && apt-get clean && rm -rf /var/lib/apt/lists/*
 
+ARG PIXL_USER_UID
+ARG PIXL_USER_GID
+RUN groupadd --gid $PIXL_USER_GID pixl && useradd --uid $PIXL_USER_UID --gid $PIXL_USER_GID pixl
 WORKDIR /app
 # Install requirements before copying modules
 COPY ./hasher/pyproject.toml .
@@ -34,4 +37,5 @@ COPY ./hasher/ .
 RUN --mount=type=cache,target=/root/.cache \
     pip install .
 
+RUN mkdir /logs && chown pixl:pixl /logs
 ENTRYPOINT ["uvicorn", "hasher.main:app", "--host", "0.0.0.0", "--port", "8000"]
