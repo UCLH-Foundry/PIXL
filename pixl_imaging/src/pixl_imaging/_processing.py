@@ -13,7 +13,6 @@
 #  limitations under the License.
 from __future__ import annotations
 
-import logging
 from asyncio import sleep
 from dataclasses import dataclass
 from time import time
@@ -27,7 +26,7 @@ from pixl_imaging._orthanc import Orthanc, PIXLRawOrthanc
 if TYPE_CHECKING:
     from core.patient_queue.message import Message
 
-logger = logging.getLogger("uvicorn")
+from loguru import logger
 
 
 async def process_message(message: Message) -> None:

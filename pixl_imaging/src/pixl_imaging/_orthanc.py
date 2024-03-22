@@ -13,16 +13,14 @@
 #  limitations under the License.
 from __future__ import annotations
 
-import logging
 from abc import ABC, abstractmethod
 from json import JSONDecodeError
 from typing import Any, Optional
 
 import requests
 from decouple import config
+from loguru import logger
 from requests.auth import HTTPBasicAuth
-
-logger = logging.getLogger("uvicorn")
 
 
 class Orthanc(ABC):
