@@ -47,14 +47,14 @@ class Orthanc(ABC):
 
     def query_remote(self, data: dict, modality: str) -> Optional[str]:
         """Query a particular modality, available from this node"""
-        logger.debug("Running query on modality: %s with %s", modality, data)
+        logger.debug("Running query on modality: {} with {}", modality, data)
 
         response = self._post(
             f"/modalities/{modality}/query",
             data=data,
             timeout=config("PIXL_QUERY_TIMEOUT", default=10, cast=float),
         )
-        logger.debug("Query response: %s", response)
+        logger.debug("Query response: {}", response)
 
         if len(self._get(f"/queries/{response['ID']}/answers")) > 0:
             return str(response["ID"])

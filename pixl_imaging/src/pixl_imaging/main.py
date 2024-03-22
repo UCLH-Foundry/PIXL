@@ -17,11 +17,14 @@ from __future__ import annotations
 
 import asyncio
 import importlib.metadata
+import sys
 
 from core.patient_queue.subscriber import PixlConsumer
 from core.rest_api.router import router, state
+from decouple import config
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
+from loguru import logger
 
 from ._processing import process_message
 
@@ -34,6 +37,10 @@ app = FastAPI(
     default_response_class=JSONResponse,
 )
 app.include_router(router)
+
+# Set up logging as main entry point
+logger.remove()  # Remove all handlers added so far, including the default one.
+logger.add(sys.stderr, level=config("LOG_LEVEL", default="INFO"))
 
 
 @app.on_event("startup")

@@ -31,7 +31,7 @@ from loguru import logger
 
 async def process_message(message: Message) -> None:
     """Process message from queue."""
-    logger.debug("Processing: %s", message)
+    logger.debug("Processing: {}", message)
 
     study = ImagingStudy.from_message(message)
     orthanc_raw = PIXLRawOrthanc()
@@ -43,7 +43,7 @@ async def process_message(message: Message) -> None:
     # Tell orthanc to query VNA for the patient and accession number
     query_id = orthanc_raw.query_remote(study.orthanc_query_dict, modality=config("VNAQR_MODALITY"))
     if query_id is None:
-        logger.error("Failed to find %s in the VNA", study)
+        logger.error("Failed to find {} in the VNA", study)
         raise RuntimeError
 
     # Get image from VNA for patient and accession number
@@ -64,7 +64,7 @@ async def process_message(message: Message) -> None:
 
     # Now that instance has arrived in orthanc raw, we can set its project name tag via the API
     studies_with_tags = orthanc_raw.query_local(study.orthanc_query_dict)
-    logger.debug("Local instances with matching tags: %s", studies_with_tags)
+    logger.debug("Local instances with matching tags: {}", studies_with_tags)
 
     _add_project_to_study(message.project_name, orthanc_raw, studies_with_tags)
 
@@ -108,11 +108,11 @@ def _add_project_to_study(
 ) -> None:
     if len(studies_with_tags) != 1:
         logger.error(
-            "Got %s studies with matching accession number and patient ID, expected 1",
+            "Got {} studies with matching accession number and patient ID, expected 1",
             len(studies_with_tags),
         )
     for study in studies_with_tags:
-        logger.debug("Study ID %s", study)
+        logger.debug("Study ID {}", study)
         orthanc_raw.modify_private_tags_by_study(
             study_id=study,
             private_creator=DICOM_TAG_PROJECT_NAME.creator_string,
