@@ -1,2 +1,2 @@
 procedure_id,mrn,accession_number,project_name,extract_generated_timestamp,study_date
-0,patient_identifier,123456789,ms-pinpoint-test,01/01/2022 00:01,01/01/2022 00:01
+0,patient_identifier,123456789,ms-pinpoint-test,2023-01-01T00:01:00Z,2022-01-01
