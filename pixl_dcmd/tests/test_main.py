@@ -22,6 +22,7 @@ import pytest
 import sqlalchemy
 import yaml
 from pydicom.data import get_testdata_file
+from pydicom.dataset import Dataset
 from pytest_pixl.helpers import run_subprocess
 
 from core.db.models import Image
@@ -29,6 +30,7 @@ from pixl_dcmd.main import (
     apply_tag_scheme,
     merge_tag_schemes,
     remove_overlays,
+    _scheme_list_to_dict,
 )
 
 
@@ -39,7 +41,7 @@ def tag_scheme() -> dict:
         pathlib.Path(__file__).parents[2]
         / "projects/configs/tag-operations/test-extract-uclh-omop-cdm.yaml"
     )
-    return yaml.safe_load(tag_file.read_text())
+    return _scheme_list_to_dict(yaml.safe_load(tag_file.read_text()))
 
 
 def test_remove_overlay_plane() -> None:
@@ -154,3 +156,37 @@ def test_merge_multiple_tag_schemes():
     expected = merge_tag_schemes([base_tag_ops_file])
     result = merge_tag_schemes([base_tag_ops_file, base_tag_ops_file])
     assert result == expected
+
+
+def test_nested_private_tag_deleted(monkeypatch):
+    """
+    GIVEN a dicom image that has a sequence tag (marked keep) with a private tag (marked delete)
+    WHEN the dicom tag scheme is applied
+    THEN the nested private tag should be deleted
+    """
+    # Create a test DICOM with a nested private tag
+    exported_dicom = pathlib.Path(__file__).parents[2] / "test/resources/Dicom1.dcm"
+    input_dataset = pydicom.dcmread(exported_dicom)
+    input_dataset.add_new((0x0009, 0x0010), "SQ", [Dataset(), Dataset()])
+    input_dataset[(0x0009, 0x0010)][0].add_new(
+        (0x0009, 0x0011), "PN", "Nested_Patient_delete"
+    )
+    input_dataset[(0x0009, 0x0010)][0].add_new(
+        (0x0009, 0x0010), "PN", "Nested_Patient_keep"
+    )
+
+    # assert (0x0009, 0x0011) in ds
+    # Create a tag scheme that deletes the nested private tag
+    tag_scheme = {
+        (0x0009, 0x0010): "keep",
+        (0x0009, 0x0011): "delete",
+    }
+    monkeypatch.setattr("pixl_dcmd.main._scheme_list_to_dict", lambda x: tag_scheme)
+    # Apply the tag scheme
+    output_dataset = apply_tag_scheme(input_dataset, tag_scheme)
+
+    # Check that the nested private tag has been deleted
+    assert (0x0009, 0x0011) not in output_dataset
+    assert (0x0009, 0x0010) in output_dataset
+    assert (0x0009, 0x0011) not in output_dataset[(0x0009, 0x0010)]
+    assert (0x0009, 0x0011) not in output_dataset[(0x0009, 0x0010)][0]

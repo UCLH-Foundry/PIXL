@@ -32,7 +32,9 @@ url = URL.create(
 engine = create_engine(url)
 
 
-def add_hashed_identifier_and_save(existing_image: Image, hashed_value: str) -> Image:
+def add_hashed_identifier_and_save_to_db(
+    existing_image: Image, hashed_value: str
+) -> Image:
     PixlSession = sessionmaker(engine)
     with PixlSession() as pixl_session, pixl_session.begin():
         existing_image.hashed_identifier = hashed_value

@@ -34,9 +34,9 @@ secrets. Orthanc interprets all `.json` files in the `/run/secrets` mount as con
   the config stub for DICOMWeb (to enable configuration of the Azure DICOM service at runtime).
   - `orthanc.json` - Controls the instance name, RBAC, storage and enabling plugins. (Plugins are
   required to enable the Python plugins)
-- The anonymisation is carried out by an Orthanc Python plugin [anon.py](./plugin/anon.py). This
-plugin uses the [pixl_dcmd](../../pixl_dcmd/) package to apply the anonymisation scheme. `pixl.py`
-is also responsible for the auto-routing of anonymised studies to the Azure DICOM service.
+- The anonymisation is carried out by an Orthanc Python plugin [pixl.py](./plugin/pixl.py). This
+plugin uses the [pixl_dcmd](../../pixl_dcmd/) package to apply the anonymisation scheme (and that
+in turn uses [Kitware Dicom Anonymizer](https://github.com/KitwareMedical/dicom-anonymizer))
 
 ### Step 1
 

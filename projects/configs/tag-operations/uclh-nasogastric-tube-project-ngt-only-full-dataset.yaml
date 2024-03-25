@@ -26,7 +26,7 @@
 - name: "SOP Instance UID"
   group: 0x0008
   element: 0x0018
-  op: "hash-uid"
+  op: "replace_UID"
 - name: "Study Date"
   group: 0x0008
   element: 0x0020
@@ -66,7 +66,7 @@
 - name: "Accession Number"
   group: 0x0008
   element: 0x0050
-  op: "secure-hash"
+  op: "replace"
 - name: "Modality"
   group: 0x0008
   element: 0x0060
@@ -146,7 +146,7 @@
 - name: "Patients Name"
   group: 0x0010
   element: 0x0010
-  op: "secure-hash"
+  op: "replace"
 - name: "Patient ID"
   group: 0x0010
   element: 0x0020
@@ -354,15 +354,15 @@
 - name: "Study Instance UID"
   group: 0x0020
   element: 0x000d
-  op: "hash-uid"
+  op: "replace_UID"
 - name: "Series Instance UID"
   group: 0x0020
   element: 0x000e
-  op: "hash-uid"
+  op: "replace_UID"
 - name: "Study ID"
   group: 0x0020
   element: 0x0010
-  op: "fixed"
+  op: "replace"
 - name: "Series Number"
   group: 0x0020
   element: 0x0011
@@ -530,35 +530,35 @@
 - name: "Instance Creator UID"
   group: 0x0008
   element: 0x0014
-  op: "hash-uid"
+  op: "replace_UID"
 - name: "Referenced SOP Instance UID"
   group: 0x0008
   element: 0x1155
-  op: "hash-uid"
+  op: "replace_UID"
 - name: "Frame of Reference UID"
   group: 0x0020
   element: 0x0052
-  op: "hash-uid"
+  op: "replace_UID"
 - name: "Synchronization Frame of Reference UID"
   group: 0x0020
   element: 0x0200
-  op: "hash-uid"
+  op: "replace_UID"
 - name: "Storage Media File-set UID"
   group: 0x0088
   element: 0x0140
-  op: "hash-uid"
+  op: "replace_UID"
 - name: "Referenced Frame of Reference UID"
   group: 0x3006
   element: 0x0024
-  op: "hash-uid"
+  op: "replace_UID"
 - name: "Related Frame of Reference UID"
   group: 0x3006
   element: 0x00C2
-  op: "hash-uid"
+  op: "replace_UID"
 - name: "UID"
   group: 0x0040
   element: 0xA124
-  op: "hash-uid"
+  op: "replace_UID"
 - name: "Study Comments [Retired]"
   group: 0x0032
   element: 0x4000
@@ -582,12 +582,12 @@
 - name: "Additional Patient History"
   group: 0x0010
   element: 0x21b0
-  op: "delete" 
+  op: "delete"
 - name: "Pregnancy Status"
   group: 0x0010
   element: 0x21c0
-  op: "delete" 
+  op: "delete"
 - name: "Pixel Data"
   group: 0x7fe0
   element: 0x0010
-  op: "keep" 
+  op: "keep"
