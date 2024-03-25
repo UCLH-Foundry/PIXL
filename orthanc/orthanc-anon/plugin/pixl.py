@@ -37,7 +37,7 @@ from decouple import config
 from pydicom import dcmread
 
 import orthanc
-from pixl_dcmd.main import anonymise_dicom, write_dataset_to_bytes
+from pixl_dcmd.main import anonymise_dicom_per_project_config, write_dataset_to_bytes
 
 if TYPE_CHECKING:
     from typing import Any
@@ -282,7 +282,7 @@ def ReceivedInstanceCallback(receivedDicom: bytes, origin: str) -> Any:
 
     # Attempt to anonymise and drop the study if any exceptions occur
     try:
-        dataset = anonymise_dicom(dataset)
+        dataset = anonymise_dicom_per_project_config(dataset)
         return orthanc.ReceivedInstanceAction.MODIFY, write_dataset_to_bytes(dataset)
     except Exception:  # noqa: BLE001
         orthanc.LogError("Failed to anonymize study due to\n" + traceback.format_exc())

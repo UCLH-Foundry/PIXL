@@ -16,7 +16,7 @@ from __future__ import annotations
 from io import BytesIO
 from os import PathLike
 from pathlib import Path
-from typing import Any, BinaryIO, Union
+from typing import Any, BinaryIO, Callable, Union
 from logging import getLogger
 
 from core.project_config import load_project_config
@@ -27,7 +27,6 @@ import requests
 from decouple import config
 from pydicom import Dataset, dcmwrite
 from dicomanonymizer.simpledicomanonymizer import (
-    anonymize_dataset,
     actions_map_name_functions,
 )
 
@@ -52,7 +51,7 @@ def write_dataset_to_bytes(dataset: Dataset) -> bytes:
         return buffer.read()
 
 
-def anonymise_dicom(dataset: Dataset) -> Dataset:
+def anonymise_dicom_per_project_config(dataset: Dataset) -> Dataset:
     """
     Anonymises a DICOM dataset as Received by Orthanc.
     Finds appropriate configuration based on project name and anonymises by
@@ -70,64 +69,44 @@ def anonymise_dicom(dataset: Dataset) -> Dataset:
     project_config = load_project_config(slug)
     logger.error(f"Received instance for project {slug}")
 
-    if dataset.Modality not in project_config.project.modalities:
+    # Merge tag schemes
+    tag_scheme = merge_tag_schemes(project_config.tag_operation_files)
+
+    # Get actions for each tag as functions
+    tag_actions = convert_schema_to_actions(dataset, tag_scheme)
+    modalities = project_config.project.modalities
+
+    # Apply scheme to dataset recursively
+    anonymise_dicom_recursively(dataset, modalities, tag_actions)
+
+    # Apply whitelist recursively
+    dataset = enforce_whitelist(dataset, tag_scheme)
+    logger.info(
+        f"DICOM tag anonymisation applied according to {project_config.tag_operation_files}"
+    )
+    logger.warning("DICOM tag anonymisation applied")
+
+
+def anonymise_dicom_recursively(
+    dataset: Dataset, modalities: list[str], tag_actions: dict[tuple, Callable]
+) -> Dataset:
+    if (0x0008, 0x0060) in dataset and dataset.Modality not in modalities:
         msg = f"Dropping DICOM Modality: {dataset.Modality}"
         logger.error(msg)
         raise ValueError(msg)
 
     logger.warning("Anonymising received instance")
 
-    # Rip out overlays/
-    dataset = remove_overlays(dataset)
-    logger.info("Removed overlays")
+    # anonymize_dataset(dataset, tag_actions, delete_private_tags=False)
 
-    # Merge tag schemes
-    all_tags = merge_tag_schemes(project_config.tag_operation_files)
-
-    # Apply scheme to instance
-    dataset = apply_tag_scheme(dataset, all_tags)
-
-    # Apply whitelist
-    dataset = enforce_whitelist(dataset, all_tags)
-
-    logger.info(
-        f"DICOM tag anonymisation applied according to {project_config.tag_operation_files}"
-    )
-    logger.warning("DICOM tag anonymisation applied")
+    for elem in dataset.iterall():
+        if elem.tag in tag_actions.keys():
+            logger.debug(
+                f"Conducting operation {tag_actions[elem.tag]} on: {elem.keyword} (0x{elem.tag.group:04x},0x{elem.tag.element:04x})"
+            )
+            tag_actions[elem.tag](dataset, elem.tag)
 
     # Write anonymised instance to disk.
-    return dataset
-
-
-def remove_overlays(dataset: Dataset) -> Dataset:
-    """
-    Search for overlays planes and remove them.
-
-    Overlay planes are repeating groups in [0x6000,xxxx].
-    Up to 16 overlays can be stored in 0x6000 to 0x601E.
-    See:
-    https://dicom.nema.org/medical/dicom/current/output/chtml/part03/sect_C.9.2.html
-    for further details.
-    """
-    logger.debug("Starting search for overlays...")
-
-    for i in range(0x6000, 0x601F, 2):
-        overlay = dataset.group_dataset(i)
-        message = f"Checking for overlay in: [0x{i:04x}]"
-        logger.debug(f"\t{message}")
-
-        if overlay:
-            message = f"Found overlay in: [0x{i:04x}]"
-            logger.debug(f"\t{message}")
-
-            message = f"Deleting overlay in: [0x{i:04x}]"
-            logger.debug(f"\t{message}")
-            for item in overlay:
-                del dataset[item.tag]
-        else:
-            message = f"No overlay in: [0x{i:04x}]"
-            logger.debug(f"\t{message}")
-
     return dataset
 
 
@@ -158,7 +137,9 @@ def _scheme_list_to_dict(tags: list[dict]) -> dict[tuple, str]:
     return {(tag["group"], tag["element"]): tag["op"] for tag in tags}
 
 
-def apply_tag_scheme(dataset: Dataset, overwrite_tags: dict[tuple, str]) -> Dataset:
+def convert_schema_to_actions(
+    dataset: Dataset, overwrite_tags: dict[tuple, str]
+) -> dict[tuple, Callable]:
     """
     Apply anonymisation operations for a given set of tags to a dataset.
     Using external library, default actions applied to public tags unless overwritten.
@@ -166,7 +147,6 @@ def apply_tag_scheme(dataset: Dataset, overwrite_tags: dict[tuple, str]) -> Data
 
     Added custom function secure-hash for linking purposes.
     """
-    logger.debug("Applying tag scheme")
 
     # Get the MRN and Accession Number before we've anonymised them
     mrn = dataset[0x0010, 0x0020].value  # Patient ID
@@ -180,9 +160,8 @@ def apply_tag_scheme(dataset: Dataset, overwrite_tags: dict[tuple, str]) -> Data
             )
             continue
         tag_actions[group_el] = actions_map_name_functions[overwrite_tags[group_el]]
-    anonymize_dataset(dataset, tag_actions, delete_private_tags=False)
 
-    return dataset
+    return tag_actions
 
 
 def _secure_hash(dataset: Dataset, tag: tuple, mrn: str, accession_number: str) -> None:
@@ -231,10 +210,10 @@ def _hash_values(pat_value: str, hash_len: int = 0) -> str:
 
 
 def enforce_whitelist(dataset: Dataset, tags: dict[tuple, str]) -> Dataset:
-    """Delete any tags not in the tagging scheme."""
+    """Delete any tags not in the tagging scheme. Iterates through Sequences."""
     # For every element:
     logger.debug("Enforcing whitelist")
-    for de in dataset:
+    for de in dataset.iterall():
         keep_el = False
         # For every entry in the YAML:
         for group_el in tags:

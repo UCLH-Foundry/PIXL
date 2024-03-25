@@ -16,16 +16,14 @@ from __future__ import annotations
 import logging
 
 from pixl_dcmd.main import (
-    apply_tag_scheme,
+    convert_schema_to_actions,
     enforce_whitelist,
-    remove_overlays,
     write_dataset_to_bytes,
 )
 
 __all__ = [
-    "remove_overlays",
     "write_dataset_to_bytes",
-    "apply_tag_scheme",
+    "convert_schema_to_actions",
     "enforce_whitelist",
 ]
 
