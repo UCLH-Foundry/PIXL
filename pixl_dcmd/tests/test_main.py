@@ -21,15 +21,16 @@ import pydicom
 import pytest
 import sqlalchemy
 import yaml
-from pydicom.data import get_testdata_file
-from pytest_pixl.helpers import run_subprocess
-
 from core.db.models import Image
 from pixl_dcmd.main import (
+    anonymise_dicom,
     apply_tag_scheme,
     merge_tag_schemes,
     remove_overlays,
 )
+from pydicom.data import get_testdata_file
+from pydicom.dataset import Dataset
+from pytest_pixl.helpers import run_subprocess
 
 
 @pytest.fixture(scope="module")
@@ -55,6 +56,25 @@ def test_remove_overlay_plane() -> None:
 
 # TODO: Produce more complete test coverage for anonymisation
 # https://github.com/UCLH-Foundry/PIXL/issues/132
+
+
+def test_anonymisation(rows_in_session, mri_diffusion_dicom_image: Dataset) -> None:
+    """
+    Test that the anonymisation process works.
+    GIVEN a dicom image
+    WHEN the anonymisation is applied
+    THEN all tag operations should be applied
+    """
+
+    # Sanity check
+    assert (0x2001, 0x1003) in mri_diffusion_dicom_image
+
+    anon_ds = anonymise_dicom(mri_diffusion_dicom_image)
+
+    # Whitelisted tags should still be present
+    assert (0x2001, 0x1003) in anon_ds
+
+
 def test_image_already_exported_throws(rows_in_session, tag_scheme):
     """
     GIVEN a dicom image which has no un-exported rows in the pipeline database

@@ -21,7 +21,13 @@ This information is currently duplicated in
 For now you will have to manually keep these in step.
 """
 
+from __future__ import annotations
+
 from dataclasses import dataclass
+from typing import TYPE_CHECKING, Any, Optional
+
+if TYPE_CHECKING:
+    from pydicom.dataset import Dataset
 
 
 @dataclass
@@ -40,6 +46,10 @@ class PrivateDicomTag:
     required_private_block: int
     creator_string: str
     tag_nickname: str
+    # LO = Long string max 64
+    # https://dicom.nema.org/medical/dicom/current/output/chtml/part05/sect_6.2.html
+    vr: str
+    unknown_value: Optional[str] = "__pixl_unknown_value__"
 
     def acceptable_private_block(self, actual_private_block: int) -> bool:
         """
@@ -60,4 +70,40 @@ DICOM_TAG_PROJECT_NAME = PrivateDicomTag(
     offset_id=0x01,
     creator_string="UCLH PIXL",
     tag_nickname="UCLHPIXLProjectName",
+    vr="LO",
+    unknown_value="__pixl_unknown_value__",
 )
+
+
+def add_private_tag(dataset: Dataset, private_tag: PrivateDicomTag) -> None:
+    """
+    Add a private tag to an existing DICOM dataset.
+
+    This uses pydicom.Dataset.private_block
+
+    :param ds: The DICOM dataset to add the private tags to.
+    :type ds: pydicom.Dataset
+    :param private_tag: A custom tag to add to the DICOM dataset.
+    """
+    private_block = dataset.private_block(
+        private_tag.group_id, private_tag.creator_string, create=True
+    )
+    private_block.add_new(private_tag.offset_id, private_tag.vr, private_tag.unknown_value)
+
+
+def create_private_tag(group_id: int, element_id: int, vr: str, value: Any) -> PrivateDicomTag:
+    """
+    Creates a valid private DICOM tag from a group and element id, by calculating the required
+    offset.
+    """
+    return PrivateDicomTag(
+        group_id=group_id,
+        # The offset is the element id minus the private block start, which seems to be always
+        # equal to 0x1000 (4096)
+        offset_id=element_id - 0x1000,
+        required_private_block=0x10,
+        creator_string="UCLH PIXL",
+        tag_nickname="UCLHPIXLProjectName",
+        vr=vr,
+        unknown_value=value,
+    )

@@ -104,6 +104,8 @@ def modify_dicom_tags(receivedDicom: bytes, origin: str) -> Any:
         print("modify_dicom_tags - doing nothing as change triggered by API")  # noqa: T201
         return orthanc.ReceivedInstanceAction.KEEP_AS_IS, None
     dataset = dcmread(BytesIO(receivedDicom))
+
+    # TODO: replace with `core.dicom_tags.add_private_tag`
     private_creator_name = DICOM_TAG_PROJECT_NAME.creator_string
     # See the orthanc.json config file for where this tag is given a nickname
     private_tag_offset = DICOM_TAG_PROJECT_NAME.offset_id
@@ -119,6 +121,7 @@ def modify_dicom_tags(receivedDicom: bytes, origin: str) -> Any:
 
     private_block = dataset.private_block(group_id, private_creator_name, create=True)
     private_block.add_new(private_tag_offset, vr, unknown_value)
+    # end TODO
 
     print(  # noqa: T201
         f"modify_dicom_tags - added new private "

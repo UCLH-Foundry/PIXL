@@ -21,6 +21,14 @@ from typing import Optional
 import pytest
 import requests
 from core.db.models import Base, Extract, Image
+from core.dicom_tags import (
+    DICOM_TAG_PROJECT_NAME,
+    PrivateDicomTag,
+    add_private_tag,
+    create_private_tag,
+)
+from core.project_config import load_project_config, load_tag_operations
+from pydicom.dataset import Dataset
 from sqlalchemy import Engine, create_engine
 from sqlalchemy.orm import Session, sessionmaker
 import tempfile
@@ -35,17 +43,21 @@ os.environ["PROJECT_CONFIGS_DIR"] = str(
 )
 
 STUDY_DATE = datetime.date.fromisoformat("2023-01-01")
+TEST_PROJECT_SLUG = "test-extract-uclh-omop-cdm"
+
+EXPORTED_MRN = "987654321"
+EXPORTED_ACCESSION_NUMBER = "AA12345601"
 
 
 @pytest.fixture()
 def rows_in_session(db_session) -> Session:
     """Insert a test row for each table, returning the session for use in tests."""
-    extract = Extract(slug="i-am-a-project")
+    extract = Extract(slug=TEST_PROJECT_SLUG)
 
     image_exported = Image(
-        accession_number="AA12345601",
+        accession_number=EXPORTED_ACCESSION_NUMBER,
         study_date=STUDY_DATE,
-        mrn="987654321",
+        mrn=EXPORTED_MRN,
         extract=extract,
         exported_at=datetime.datetime.now(tz=datetime.timezone.utc),
     )
@@ -87,6 +99,54 @@ def directory_of_mri_dicoms() -> pathlib.Path:
         pytest_pixl.dicom.write_volume(td + "/{slice}.dcm")
         td_path = pathlib.Path(td)
         yield td_path
+
+
+def _mri_diffusion_tags(manufacturer: str = "Philips") -> list[PrivateDicomTag]:
+    """
+    Private DICOM tags for testing the anonymisation process.
+    """
+    # Private tags from `/projects/configs/tag-operations/mri-diffusion.yaml` so we can test
+    # whether the manufactuer overrides work during anonymisation
+    project_config = load_project_config(TEST_PROJECT_SLUG)
+    tag_ops = load_tag_operations(project_config)
+    manufacturer_overrides = [
+        override
+        for override in tag_ops.manufacturer_overrides
+        if override["manufacturer"] == manufacturer
+    ][0]
+
+    return [
+        create_private_tag(tag["group"], tag["element"], vr="SH", value="test")
+        for tag in manufacturer_overrides["tags"]
+    ]
+
+
+@pytest.fixture()
+def mri_diffusion_dicom_image(rows_in_session) -> Dataset:
+    """
+    A DICOM image with diffusion data to test the anonymisation process.
+    """
+    manufacturer = "Philips"
+    ds = pytest_pixl.dicom.generate_dicom_dataset(
+        Manufacturer=manufacturer, Modality="DX"
+    )
+    tags = _mri_diffusion_tags(manufacturer)
+    for tag in tags:
+        add_private_tag(ds, tag)
+
+    # Make sure the project name tag is added for anonymisation to work
+    add_private_tag(ds, DICOM_TAG_PROJECT_NAME)
+    # Update the project name tag to a known value
+    block = ds.private_block(
+        DICOM_TAG_PROJECT_NAME.group_id, DICOM_TAG_PROJECT_NAME.creator_string
+    )
+    ds[block.get_tag(DICOM_TAG_PROJECT_NAME.offset_id)].value = TEST_PROJECT_SLUG
+
+    # Make sure MRN and accession number match the values in the database
+    ds[0x0010, 0x0020].value = EXPORTED_MRN
+    ds[0x0008, 0x0050].value = EXPORTED_ACCESSION_NUMBER
+
+    return ds
 
 
 @pytest.fixture(scope="module")

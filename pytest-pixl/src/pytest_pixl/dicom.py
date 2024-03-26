@@ -19,7 +19,6 @@ from __future__ import annotations
 import importlib
 import json
 from pathlib import Path
-from typing import Any, TypeAlias, Union
 
 import numpy as np
 from pydicom import Sequence
@@ -128,26 +127,6 @@ def _generate_default_dicom_dataset() -> Dataset:
     ds.is_implicit_VR = True
     ds.is_little_endian = True
     return ds
-
-
-# Type alias for a DICOM tag
-Tag: TypeAlias = tuple[Union[int, str, tuple[int, int]], str, Any]
-
-
-def add_private_tags(ds: Dataset, private_tags: list[Tag]) -> None:
-    """
-    Add private tags to an existing DICOM dataset.
-
-    This uses pydicom.Dataset.private_block
-
-    :param ds: The DICOM dataset to add the private tags to.
-    :type ds: pydicom.Dataset
-    :param private_tags: A list of custom tags to add to the DICOM dataset. Each tag should be a
-        tuple of the form (tag_id, VR, value).
-    :type private_tags: list[tuple[Union[int, str, tuple[int, int]], str, Any]]
-    """
-    for tag_id, vr, value in private_tags:
-        ds.add_new(tag_id, vr, value)
 
 
 def _create_default_json(json_file: Path) -> None:  # noqa: PLR0915 (too many statements)
