@@ -397,6 +397,14 @@ There is support (sometimes through plugins) for these tools in most IDEs & edit
 Before raising a PR, make sure to **run all tests** for each PIXL module
 and not just the component you have been working on as this will help us catch unintentional regressions without spending GH actions minutes :-)
 
+You can run all tests from the root of the repo with:
+
+```sh
+pytest
+```
+
+The `pytest.ini` file in the root of the repo contains the configuration for running all tests at once.
+
 We run [pre-commit](https://pre-commit.com/) as part of the GitHub Actions CI. To install and run it locally, do:
 
 ```sh
