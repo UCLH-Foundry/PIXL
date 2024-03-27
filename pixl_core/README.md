@@ -93,6 +93,15 @@ for convenience `latest` is a symlink to the most recent extract.
     └── latest -> all_extracts/2023-12-13t16-22-40
 ```
 
+## Project configuration
+
+The `project_config` module provides the functionality to handle
+[project configurations](../README.md#configure-a-new-project).
+
+### Design
+
+![](../docs/design/diagrams/pixl-multi-project-config.png)
+
 ## Uploading to an FTPS server
 
 The `core.upload` module implements functionality to upload DICOM images and parquet files to an

@@ -10,6 +10,21 @@ several services orchestrated by [Docker Compose](https://docs.docker.com/compos
 
 To get access to the GAE, [see the documentation on Slab](https://uclh.slab.com/posts/gae-access-7hkddxap)
 
+## Development
+
+[Follow the developer setup instructions](./docs/setup/developer.md).
+
+Before raising a PR, make sure to **run all tests** for each PIXL module
+and not just the component you have been working on as this will help us catch unintentional
+regressions without spending GitHub actions minutes :-)
+
+In addition, make sure to [have `pre-commit` installed](/docs/setup/developer.md#linting) to
+automatically check your code before committing.
+
+## Design
+
+[`docs/design`](./docs/design/) contains the design documentation for the PIXL system.
+
 ## Services
 
 ### [PIXL core](./pixl_core/README.md)
@@ -53,92 +68,7 @@ HTTP API to process messages from the `imaging` queue and populate the raw ortha
 
 ## Setup
 
-### 0. UCLH infrastructure setup
-
-<details>
-<summary>Install shared miniforge installation if it doesn't exist</summary>
-
-Follow the suggestion for installing a central [miniforge](https://github.com/conda-forge/miniforge)
-installation to allow all users to be able to run modern python without having admin permissions.
-
-```shell
-# Create directory with correct structure (only if it doesn't exist yet)
-mkdir /gae/miniforge3
-chgrp -R docker /gae/miniforge3
-chmod -R g+rwxs /gae/miniforge3  # inherit group when new directories or files are created
-setfacl -R -m d:g::rwX /gae/miniforge3
-# Install miniforge
-wget "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh"
-bash Miniforge3-$(uname)-$(uname -m).sh -p /gae/miniforge3
-conda update -n base -c conda-forge conda
-conda create -n pixl_dev python=3.10.*
-```
-
-The directory should now have these permissions
-
-```shell
-> ls -lah /gae/miniforge3/
-total 88K
-drwxrws---+  19 jstein01 docker 4.0K Nov 28 12:27 .
-drwxrwx---.  18 root     docker 4.0K Dec  1 19:35 ..
-drwxrws---+   2 jstein01 docker 8.0K Nov 28 12:27 bin
-drwxrws---+   2 jstein01 docker   30 Nov 28 11:49 compiler_compat
-drwxrws---+   2 jstein01 docker   32 Nov 28 11:49 condabin
-drwxrws---+   2 jstein01 docker 8.0K Nov 28 12:27 conda-meta
--rw-rws---.   1 jstein01 docker   24 Nov 28 11:49 .condarc
-...
-```
-
-</details>
-<details>
-
-<summary>If you haven't just installed the miniforge yourself, update your configuration</summary>
-
-Edit `~/.bash_profile` to add `/gae/miniforge3/bin` to the PATH. for example
-
-```shell
-PATH=$PATH:$HOME/.local/bin:$HOME/bin:/gae/miniforge3/bin
-```
-
-Run the updated profile (or reconnect to the GAE) so that conda is in your PATH
-
-```shell
-source ~/.bash_profile
-```
-
-Initialise conda
-
-```shell
-conda init bash
-```
-
-Run the updated profile (or reconnect to the GAE) so that conda is in your PATH
-
-```shell
-source ~/.bash_profile
-```
-
-Activate an existing pixl environment
-
-```shell
-conda activate pixl_dev
-```
-
-</details>
-<details>
-<summary>Create an instance for the GAE if it doesn't already exist</summary>
-
-Select a place for the deployment. On UCLH infrastructure this will be in `/gae`, so `/gae/pixl_dev` for example.
-
-```shell
-mkdir /gae/pixl_dev
-chgrp -R docker /gae/pixl_dev
-chmod -R g+rwxs /gae/pixl_dev  # inherit group when new directories or files are created
-setfacl -R -m d:g::rwX /gae/pixl_dev
-# now clone the repository or copy an existing deployment
-```
-
-</details>
+### 0. [UCLH infrastructure setup](./docs/setup/uclh-infrastructure-setup.md)
 
 ### 1. Choose deployment environment
 
@@ -267,90 +197,7 @@ cp .secrets.env.sample .secrets.env
 
 and fill in the missing values (for dev purposes find the `pixl-dev-secrets.env` note on LastPass).
 
-<details><summary>Azure Keyvault setup</summary>
-
-## Azure Keyvault setup
-
-_This is done for the \_UCLH_DIF_ `dev` tenancy, will need to be done once in the _UCLHAZ_ `prod`
-tenancy when ready to deploy to production.\_
-
-This Key Vault and secret must persist any infrastructure changes so should be separate from disposable
-infrastructure services. ServicePrincipal is required to connect to the Key Vault.
-
-The application uses the ServicePrincipal and password to authenticate with Azure via environment
-variables. See [here](https://learn.microsoft.com/en-us/python/api/azure-identity/azure.identity.environmentcredential?view=azure-python)
-for more info.
-
-The Key Vault and ServicePrincipal have already been created for the `dev` environment and details
-are stored in the `pixl-dev-secrets.env` note in the shared PIXL folder on _LastPass_.
-
-The process for doing so using the `az` CLI tool is described below.
-This process must be repeated for `staging` & `prod` environments.
-
-### Step 1
-
-Create the Azure Key Vault in an appropriate resource group:
-
-```bash
-az keyvault create --resource-group <resource-group-name> --name <key-vault-name> --location "UKSouth"
-```
-
-### Step 2
-
-Create Service Principal & grant access as per
-
-```bash
-az ad sp create-for-rbac -n pixl-secrets --skip-assignment
-```
-
-This will produce the following output
-
-```json
-{
-    "appId": "<generated-app-ID>",
-    "displayName": "<app-name>",
-    "name": "http://<app-name>",
-    "password": "<generated-password>",
-    "tenant": "<tenant-ID>"
-}
-```
-
-### Step 3
-
-Assign correct permissions to the newly created ServicePrincipal
-
-```bash
-az keyvault set-policy --name <key-vault-name> --spn <generated-app-ID> --secret-permissions backup delete get list set
-```
-
-### Step 4
-
-Create a secret and store in the Key Vault
-
-Use Python to create a secret:
-
-```python
-import secrets
-secrets.token_urlsafe(32)
-```
-
-copy the secret and paste as <secret-value> below
-
-```bash
-az keyvault secret set --vault-name "<key-vault-name>" --name "<secret-name>" --value "<secret-value>"
-```
-
-### Step 5
-
-Save credentials in `.secrets.env` and a LastPass `PIXL Keyvault <project-slug> secrets` note.
-
-```
-EXPORT_AZ_CLIENT_ID=<generated-app-ID>
-EXPORT_AZ_CLIENT_PASSWORD=<generated-password>
-EXPORT_AZ_TENANT_ID=<tenant-ID>
-EXPORT_AZ_KEY_VAULT_NAME=<key-vault-name>
-```
-</details>
+If an Azure Keyvault hasn't been set up yet, follow [these instructions](./docs/setup/azure-keyvault.md).
 
 ## Run
 
@@ -361,6 +208,8 @@ From the _PIXL_ directory:
 ```bash
 bin/pixldc pixl_dev up
 ```
+
+Once the services are running, you can interact with the services using the [`pixl` CLI](./cli/README.md).
 
 ### Stop
 
@@ -385,27 +234,6 @@ non-null reports
 ```sql
 select count(*) from emap_data.ehr_anon where xray_report is not null;
 ```
-
-## Develop
-
-See each service's README for instructions for individual developing and testing instructions.
-Most modules require [`docker`](https://docs.docker.com/desktop/) and `docker-compose` to be installed to run tests.
-
-For Python development we use [ruff](https://docs.astral.sh/ruff/) alongside [pytest](https://www.pytest.org/).
-There is support (sometimes through plugins) for these tools in most IDEs & editors.
-
-Before raising a PR, make sure to **run all tests** for each PIXL module
-and not just the component you have been working on as this will help us catch unintentional regressions without spending GH actions minutes :-)
-
-We run [pre-commit](https://pre-commit.com/) as part of the GitHub Actions CI. To install and run it locally, do:
-
-```sh
-pip install pre-commit
-pre-commit install
-```
-
-The configuration can be found in [`.pre-commit-config.yml`](./.pre-commit-config.yaml)
-
 ## Assumptions
 
 PIXL data extracts include the below assumptions
@@ -429,7 +257,7 @@ test/resources/omop/public /*.parquet
 
 ### OMOP ES extract dir (input to PIXL)
 
-EXTRACT_DIR is the directory passed to `pixl populate`
+EXTRACT_DIR is the directory passed to `pixl populate` as the input `PARQUET_PATH` argument.
 
 ```
 EXTRACT_DIR/public /*.parquet
@@ -439,12 +267,21 @@ EXTRACT_DIR/public /*.parquet
 
 ### PIXL Export dir (PIXL intermediate)
 
+The directory where PIXL will copy the public OMOP extract files and radiology reports to.
+These files will subsequently be uploaded to the `parquet` destination specified in the
+[project config](#3-configure-a-new-project).
+
 ```
 EXPORT_ROOT/PROJECT_SLUG/all_extracts/EXTRACT_DATETIME/radiology/radiology.parquet
 ....................................................../omop/public/*.parquet
 ```
 
-### FTP server
+### Destination
+
+#### FTP server
+
+If the `parquet` destination is set to `ftps`, the public extract files and radiology report will
+be uploaded to the FTP server at the following path:
 
 ```
 FTPROOT/PROJECT_SLUG/EXTRACT_DATETIME/parquet/radiology/radiology.parquet
