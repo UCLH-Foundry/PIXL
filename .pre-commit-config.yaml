@@ -25,6 +25,7 @@ repos:
       rev: v1.9.0
       hooks:
           - id: mypy
+            entry: mypy .
             args: [--config-file=mypy.ini]
             pass_filenames: false
             additional_dependencies:
