@@ -38,7 +38,7 @@ from decouple import config
 from pydicom import dcmread
 
 import orthanc
-from pixl_dcmd.main import anonymise_dicom, write_dataset_to_bytes
+from pixl_dcmd.main import anonymise_dicom, should_exclude_series, write_dataset_to_bytes
 
 if TYPE_CHECKING:
     from typing import Any
@@ -280,6 +280,12 @@ def ReceivedInstanceCallback(receivedDicom: bytes, origin: str) -> Any:
 
     # Read the bytes as DICOM/
     dataset = dcmread(BytesIO(receivedDicom))
+
+    # Do before anonymisation in case someone decides to delete the
+    # Series Description tag as part of anonymisation.
+    if should_exclude_series(dataset):
+        orthanc.LogWarning("DICOM instance discarded due to its series description")
+        return orthanc.ReceivedInstanceAction.DISCARD, None
 
     # Attempt to anonymise and drop the study if any exceptions occur
     try:

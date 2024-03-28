@@ -14,9 +14,7 @@
 from __future__ import annotations
 
 import logging
-from asyncio import sleep
 from dataclasses import dataclass
-from time import time
 from typing import TYPE_CHECKING, Any
 
 from core.dicom_tags import DICOM_TAG_PROJECT_NAME
@@ -31,7 +29,11 @@ logger = logging.getLogger("uvicorn")
 
 
 async def process_message(message: Message) -> None:
-    """Process message from queue."""
+    """
+    Process message from queue by retrieving a study with the given Patient and Accession Number.
+    We may receive multiple messages with same Patient + Acc Num, either as retries or because
+    they are needed for multiple projects.
+    """
     logger.debug("Processing: %s", message)
 
     study = ImagingStudy.from_message(message)
@@ -47,21 +49,13 @@ async def process_message(message: Message) -> None:
         logger.error("Failed to find %s in the VNA", study)
         raise RuntimeError
 
-    # Get image from VNA for patient and accession number
-    job_id = orthanc_raw.retrieve_from_remote(query_id=query_id)  # C-Move
-    job_state = "Pending"
-    start_time = time()
-
-    while job_state != "Success":
-        if (time() - start_time) > config("PIXL_DICOM_TRANSFER_TIMEOUT", cast=float):
-            msg = (
-                f"Failed to transfer {message} within "
-                f"{config('PIXL_DICOM_TRANSFER_TIMEOUT')} seconds"
-            )
-            raise TimeoutError(msg)
-
-        await sleep(0.1)
-        job_state = orthanc_raw.job_state(job_id=job_id)
+    # Wait for query to complete
+    timeout = config("PIXL_DICOM_TRANSFER_TIMEOUT", cast=float)
+    try:
+        await orthanc_raw.wait_for_job_success(query_id, timeout)
+    except TimeoutError as te:
+        msg = f"Failed to transfer {message} within {timeout} seconds"
+        raise TimeoutError(msg) from te
 
     # Now that instance has arrived in orthanc raw, we can set its project name tag via the API
     studies_with_tags = orthanc_raw.query_local(study.orthanc_query_dict)
@@ -76,13 +70,17 @@ def _update_or_resend_existing_study_(
     project_name: str, orthanc_raw: PIXLRawOrthanc, study: ImagingStudy
 ) -> bool:
     """
-    If study exists in orthanc_raw, add project name or send directly to orthanc raw.
+    If study does not yet exist in orthanc raw, do nothing.
+    If study exists in orthanc raw and has the wrong project name, update it.
+    If study exists in orthanc raw and has the correct project name, send to orthanc anon.
 
-    Return True if exists, otherwise False.
+    Return True if study exists in orthanc raw, otherwise False.
     """
     existing_resources = study.query_local(orthanc_raw, project_tag=True)
     if len(existing_resources) == 0:
         return False
+
+    # Check whether study already has the correct project name
     different_project: list[str] = []
     for resource in existing_resources:
         project_tags = (
@@ -91,10 +89,7 @@ def _update_or_resend_existing_study_(
                 "Unknown Tag & Data"
             ),  # Fallback for testing where we're not using the entire plugin, remains undefined
         )
-        try:
-            if project_name not in project_tags:
-                different_project.append(resource["ID"])
-        except KeyError:
+        if project_name not in project_tags:
             different_project.append(resource["ID"])
 
     if different_project:

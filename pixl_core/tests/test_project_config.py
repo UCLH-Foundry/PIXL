@@ -135,3 +135,39 @@ def test_invalid_base_tags_fails(invalid_base_tags):
     """Test that invalid base tags raise an error."""
     with pytest.raises(ValidationError):
         load_tag_operations(invalid_base_tags)
+
+
+FILTER_SET_0 = None
+FILTER_SET_1 = []
+FILTER_SET_2 = ["nak", "Badg"]
+FILTER_SET_BROKEN = ["", "Badg"]
+
+
+@pytest.mark.parametrize(
+    ("series_filters", "test_series_desc", "expect_exclude"),
+    [
+        # Missing or empty filter set: allow everything
+        (FILTER_SET_0, "Snake", False),
+        (FILTER_SET_0, "Badger", False),
+        (FILTER_SET_0, "Mushroom", False),
+        (FILTER_SET_1, "Snake", False),
+        (FILTER_SET_1, "Badger", False),
+        (FILTER_SET_1, "Mushroom", False),
+        # A non-empty filter set, a match to any in the set means exclude
+        (FILTER_SET_2, "Snake", True),
+        (FILTER_SET_2, "Badger", True),
+        (FILTER_SET_2, "Mushroom", False),
+        # And then some weird cases.
+        # Empty series string never gets excluded
+        (FILTER_SET_2, "", False),
+        # Empty exclude string matches everything - not ideal but let's fix it when we decide
+        # what to do about regexes etc.
+        (FILTER_SET_BROKEN, "Mushroom", True),
+    ],
+)
+def test_series_filtering(base_yaml_data, series_filters, test_series_desc, expect_exclude):
+    """Check that series filters work, including some edge cases. No regexes yet."""
+    if series_filters is not None:
+        base_yaml_data["series_filters"] = series_filters
+    cfg = PixlConfig.model_validate(base_yaml_data)
+    assert cfg.is_series_excluded(test_series_desc) == expect_exclude

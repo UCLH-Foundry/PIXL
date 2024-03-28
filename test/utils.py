@@ -21,7 +21,9 @@ import subprocess
 from pytest_pixl.helpers import wait_for_condition
 
 
-def wait_for_stable_orthanc_anon(seconds_max, seconds_interval) -> None:
+def wait_for_stable_orthanc_anon(
+    seconds_max, seconds_interval, seconds_condition_stays_true_for
+) -> None:
     """
     Query the orthanc-anon REST API to check that the correct number of instances
     have been received.
@@ -29,7 +31,7 @@ def wait_for_stable_orthanc_anon(seconds_max, seconds_interval) -> None:
     """
     instances = []
 
-    def are_two_instances() -> bool:
+    def are_three_instances() -> bool:
         nonlocal instances
         instances_cmd = shlex.split(
             "docker exec system-test-orthanc-anon-1 "
@@ -38,14 +40,15 @@ def wait_for_stable_orthanc_anon(seconds_max, seconds_interval) -> None:
         )
         instances_output = subprocess.run(instances_cmd, capture_output=True, check=True, text=True)  # noqa: S603
         instances = json.loads(instances_output.stdout)
-        return len(instances) == 2
+        return len(instances) == 3
 
     def list_instances() -> str:
         return f"orthanc-anon instances: {instances}"
 
     wait_for_condition(
-        are_two_instances,
+        are_three_instances,
         seconds_max=seconds_max,
         seconds_interval=seconds_interval,
         progress_string_fn=list_instances,
+        seconds_condition_stays_true_for=seconds_condition_stays_true_for,
     )

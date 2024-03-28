@@ -64,7 +64,7 @@ services:
     image: rabbitmq:3.12.9-management
     healthcheck:
       test: rabbitmq-diagnostics -q check_running
-      interval: 5s
+      interval: 7s
       timeout: 5s
       retries: 20
     ports:

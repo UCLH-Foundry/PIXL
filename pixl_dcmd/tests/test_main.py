@@ -24,12 +24,19 @@ import sqlalchemy
 from core.db.models import Image
 from core.project_config import load_project_config, load_tag_operations
 from decouple import config
+from pydicom.data import get_testdata_file
+
+from pydicom.dataset import Dataset
+
+from core.dicom_tags import DICOM_TAG_PROJECT_NAME
+from pytest_pixl.dicom import generate_dicom_dataset
+from pytest_pixl.helpers import run_subprocess
+
 from pixl_dcmd.main import (
     apply_tag_scheme,
     remove_overlays,
+    should_exclude_series,
 )
-from pydicom.data import get_testdata_file
-from pytest_pixl.helpers import run_subprocess
 
 PROJECT_CONFIGS_DIR = Path(config("PROJECT_CONFIGS_DIR"))
 TEST_CONFIG = "test-extract-uclh-omop-cdm"
@@ -91,6 +98,42 @@ def test_pseudo_identifier_processing(rows_in_session, tag_scheme):
     print("after tags applied")
     assert output_dataset[0x0010, 0x0020].value == fake_hash
     assert image.hashed_identifier == fake_hash
+
+
+@pytest.fixture()
+def dicom_series_to_keep() -> list[Dataset]:
+    series = [
+        "",
+        "whatever",
+        "LOCALISER",  # is case sensitive for now - should it be?
+    ]
+    return [_make_dicom(s) for s in series]
+
+
+@pytest.fixture()
+def dicom_series_to_exclude() -> list[Dataset]:
+    series = [
+        "positioning",
+        "foo_barpositioning",
+        "positioningla",
+        "scout",
+        "localiser",
+        "localizer",
+    ]
+    return [_make_dicom(s) for s in series]
+
+
+def _make_dicom(series_description) -> Dataset:
+    ds = generate_dicom_dataset(SeriesDescription=series_description)
+    DICOM_TAG_PROJECT_NAME.add_to_dicom_dataset(ds, "test-extract-uclh-omop-cdm")
+    return ds
+
+
+def test_should_exclude_series(dicom_series_to_exclude, dicom_series_to_keep):
+    for s in dicom_series_to_keep:
+        assert not should_exclude_series(s)
+    for s in dicom_series_to_exclude:
+        assert should_exclude_series(s)
 
 
 def test_can_nifti_convert_post_anonymisation(

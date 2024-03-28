@@ -22,6 +22,12 @@ tag_operation_files:
         - "test-extract-uclh-omop-cdm.yaml"
     manufacturer_overrides: "mri-diffusion.yaml"
 
+series_filters:
+    - "localizer"
+    - "localiser"
+    - "scout"
+    - "positioning"
+
 destination:
     dicom: "ftps"
     parquet: "ftps"

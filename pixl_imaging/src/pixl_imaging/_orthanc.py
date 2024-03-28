@@ -15,7 +15,9 @@ from __future__ import annotations
 
 import logging
 from abc import ABC, abstractmethod
+from asyncio import sleep
 from json import JSONDecodeError
+from time import time
 from typing import Any, Optional
 
 import requests
@@ -90,6 +92,18 @@ class Orthanc(ABC):
             data={"TargetAet": self.aet, "Synchronous": False},
         )
         return str(response["ID"])
+
+    async def wait_for_job_success(self, query_id, timeout) -> None:
+        job_id = self.retrieve_from_remote(query_id=query_id)  # C-Move
+        job_state = "Pending"
+        start_time = time()
+
+        while job_state != "Success":
+            if (time() - start_time) > timeout:
+                raise TimeoutError
+
+            await sleep(0.1)
+            job_state = self.job_state(job_id=job_id)
 
     def job_state(self, job_id: str) -> str:
         # See: https://book.orthanc-server.com/users/advanced-rest.html#jobs-monitoring

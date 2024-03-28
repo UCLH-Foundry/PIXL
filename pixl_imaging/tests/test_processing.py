@@ -16,8 +16,8 @@
 from __future__ import annotations
 
 import datetime
-import os
 import pathlib
+import shlex
 
 import pytest
 from core.patient_queue.message import Message
@@ -26,6 +26,7 @@ from pixl_imaging._orthanc import Orthanc, PIXLRawOrthanc
 from pixl_imaging._processing import ImagingStudy, process_message
 from pydicom import dcmread
 from pydicom.data import get_testdata_file
+from pytest_pixl.helpers import run_subprocess
 
 pytest_plugins = ("pytest_asyncio",)
 
@@ -49,9 +50,11 @@ class WritableOrthanc(Orthanc):
         return "VNAQR"
 
     def upload(self, filename: str) -> None:
-        os.system(
-            f"curl -u {self._username}:{self._password} "  # noqa: S605
-            f"-X POST {self._url}/instances --data-binary @{filename}"
+        run_subprocess(
+            shlex.split(
+                f"curl -u {self._username}:{self._password} "
+                f"-X POST {self._url}/instances --data-binary @{filename}"
+            )
         )
 
 
@@ -112,6 +115,7 @@ async def test_existing_message_sent_twice(orthanc_raw) -> None:
     """
     study = ImagingStudy.from_message(message)
 
+    assert not study.query_local(orthanc_raw)
     await process_message(message)
     assert study.query_local(orthanc_raw)
 

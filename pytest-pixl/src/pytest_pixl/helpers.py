@@ -60,6 +60,7 @@ def wait_for_condition(
     *,
     seconds_max: int = 1,
     seconds_interval: int = 1,
+    seconds_condition_stays_true_for: Optional[int] = None,
     progress_string_fn: Optional[Callable[..., str]] = None,
 ) -> None:
     """
@@ -68,6 +69,8 @@ def wait_for_condition(
                             the logging output so recommended to name it well.
     :param seconds_max: maximum seconds to wait for condition to be true
     :param seconds_interval: time to sleep in between attempts
+    :param seconds_condition_stays_true_for: if not None, check that the condition is still
+                                             true this many seconds after first becoming true
     :param progress_string_fn: callable to generate a status string (eg. partial success) that
                               will be part of the log message at each attempt
     :raises AssertionError: if the condition doesn't occur during the specified period
@@ -78,6 +81,17 @@ def wait_for_condition(
         progress_str = ": " + progress_string_fn() if progress_string_fn is not None else ""
         if success:
             logger.info("Achieved condition '%s' %s", test_condition.__name__, progress_str)
+            if seconds_condition_stays_true_for is not None:
+                # This is intended for the case where data may be dripping in and the correct
+                # set of data may have been temporarily achieved, only to be joined by some
+                # incorrect data. So we have the option to check it's stably true.
+                logger.info(
+                    "Checking that condition '%s' is still true in %s seconds",
+                    test_condition.__name__,
+                    seconds_condition_stays_true_for,
+                )
+                sleep(seconds_condition_stays_true_for)
+                wait_for_condition(test_condition, progress_string_fn=progress_string_fn)
             return
         logger.info(
             "Waiting for condition '%s' (%s seconds out of %s) %s",

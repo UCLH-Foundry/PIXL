@@ -22,6 +22,10 @@ For now you will have to manually keep these in step.
 """
 
 from dataclasses import dataclass
+from typing import Any
+
+from pydicom import Dataset
+from pydicom.dataset import PrivateBlock
 
 
 @dataclass
@@ -35,8 +39,12 @@ class PrivateDicomTag:
     it's not 0x10.
     """
 
+    PLACEHOLDER_VALUE = "__pixl_unknown_value__"
+
     group_id: int
     offset_id: int
+    # (aka VR) https://dicom.nema.org/medical/dicom/current/output/chtml/part05/sect_6.2.html
+    value_type: str
     required_private_block: int
     creator_string: str
     tag_nickname: str
@@ -53,11 +61,25 @@ class PrivateDicomTag:
             return True
         return self.required_private_block == actual_private_block
 
+    def add_to_dicom_dataset(self, dataset: Dataset, value: Any) -> PrivateBlock:
+        """Add this private tag to the given dicom dataset, setting the given value"""
+        private_block = dataset.private_block(self.group_id, self.creator_string, create=True)
+        private_block.add_new(self.offset_id, self.value_type, value)
+        if not self.acceptable_private_block(private_block.block_start >> 8):
+            err_str = (
+                "The private block does not match the value hardcoded in the orthanc "
+                "config. This can be because there was an unexpected pre-existing private block "
+                f"in group {self.group_id}"
+            )
+            raise RuntimeError(err_str)
+        return private_block
+
 
 DICOM_TAG_PROJECT_NAME = PrivateDicomTag(
     group_id=0x000D,
     required_private_block=0x10,
     offset_id=0x01,
+    value_type="LO",  # LO = Long string max 64
     creator_string="UCLH PIXL",
     tag_nickname="UCLHPIXLProjectName",
 )
