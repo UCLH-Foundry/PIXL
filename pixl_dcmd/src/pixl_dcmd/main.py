@@ -25,9 +25,10 @@ from core.dicom_tags import DICOM_TAG_PROJECT_NAME
 
 import requests
 from decouple import config
-from pydicom import Dataset, dcmwrite
+from pydicom import Dataset, Sequence, dcmwrite
 from dicomanonymizer.simpledicomanonymizer import (
     actions_map_name_functions,
+    anonymize_dataset,
 )
 
 from pixl_dcmd._database import add_hashed_identifier_and_save_to_db, query_db
@@ -79,8 +80,6 @@ def anonymise_dicom_per_project_config(dataset: Dataset) -> Dataset:
     # Apply scheme to dataset recursively
     anonymise_dicom_recursively(dataset, modalities, tag_actions)
 
-    # Apply whitelist recursively
-    dataset = enforce_whitelist(dataset, tag_scheme)
     logger.info(
         f"DICOM tag anonymisation applied according to {project_config.tag_operation_files}"
     )
@@ -97,15 +96,19 @@ def anonymise_dicom_recursively(
 
     logger.warning("Anonymising received instance")
 
-    # anonymize_dataset(dataset, tag_actions, delete_private_tags=False)
+    anonymize_dataset(dataset, tag_actions, delete_private_tags=False)
 
     for elem in dataset.iterall():
-        if elem.tag in tag_actions.keys():
-            logger.debug(
-                f"Conducting operation {tag_actions[elem.tag]} on: {elem.keyword} (0x{elem.tag.group:04x},0x{elem.tag.element:04x})"
-            )
-            tag_actions[elem.tag](dataset, elem.tag)
+        if elem.VR == "SQ":
+            anon_seq = [
+                anonymise_dicom_recursively(sq_el, modalities, tag_actions)
+                for sq_el in elem.value
+            ]
+            if anon_seq and not len(anon_seq) > 0:
+                elem.value = Sequence(anon_seq)
 
+    # Apply whitelist recursively
+    dataset = enforce_whitelist(dataset, tag_actions)
     # Write anonymised instance to disk.
     return dataset
 
@@ -145,7 +148,8 @@ def convert_schema_to_actions(
     Using external library, default actions applied to public tags unless overwritten.
     See https://github.com/KitwareMedical/dicom-anonymizer for more details.
 
-    Added custom function secure-hash for linking purposes.
+    Added custom function secure-hash for linking purposes. This function needs the MRN and
+    Accession Number, hence why the dataset is passed in as well.
     """
 
     # Get the MRN and Accession Number before we've anonymised them
@@ -209,11 +213,11 @@ def _hash_values(pat_value: str, hash_len: int = 0) -> str:
     return response.text
 
 
-def enforce_whitelist(dataset: Dataset, tags: dict[tuple, str]) -> Dataset:
+def enforce_whitelist(dataset: Dataset, tags: dict[tuple, Callable]) -> Dataset:
     """Delete any tags not in the tagging scheme. Iterates through Sequences."""
     # For every element:
     logger.debug("Enforcing whitelist")
-    for de in dataset.iterall():
+    for de in dataset:
         keep_el = False
         # For every entry in the YAML:
         for group_el in tags:
@@ -222,7 +226,7 @@ def enforce_whitelist(dataset: Dataset, tags: dict[tuple, str]) -> Dataset:
             op = tags[group_el]
 
             if de.tag.group == grp and de.tag.element == el:
-                if op != "delete":
+                if op.__name__ != "delete":
                     keep_el = True
 
         if not keep_el:

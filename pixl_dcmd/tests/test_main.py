@@ -185,9 +185,39 @@ def test_nested_private_tag_deleted():
         (0x0009, 0x0010): "keep",
         (0x0009, 0x0011): "delete",
     }
+    tag_actions = convert_schema_to_actions(input_dataset, tag_scheme)
 
     # Apply the tag scheme
-    output_dataset = anonymise_dicom_recursively(input_dataset, ["DX"], tag_scheme)
+    output_dataset = anonymise_dicom_recursively(input_dataset, ["DX"], tag_actions)
+
+    # Check that the nested private tag has been deleted
+    assert (0x0009, 0x0011) not in output_dataset
+    assert (0x0009, 0x0010) in output_dataset
+    assert (0x0009, 0x0011) not in output_dataset[(0x0009, 0x0010)]
+    assert (0x0009, 0x0011) not in output_dataset[(0x0009, 0x0010)][0]
+
+
+def test_enforce_whitelist_recursively():
+    # Create a test DICOM with a nested private tag
+    exported_dicom = pathlib.Path(__file__).parents[2] / "test/resources/Dicom1.dcm"
+    input_dataset = pydicom.dcmread(exported_dicom)
+    input_dataset.add_new((0x0009, 0x0010), "SQ", [Dataset(), Dataset()])
+    input_dataset[(0x0009, 0x0010)][0].add_new(
+        (0x0009, 0x0011), "PN", "Nested_Patient_delete"
+    )
+    input_dataset[(0x0009, 0x0010)][0].add_new(
+        (0x0009, 0x0010), "PN", "Nested_Patient_keep"
+    )
+
+    # assert (0x0009, 0x0011) in ds
+    # Create a tag scheme that deletes the nested private tag
+    tag_scheme = {
+        (0x0009, 0x0010): "keep",
+    }
+    tag_actions = convert_schema_to_actions(input_dataset, tag_scheme)
+
+    # Apply the tag scheme
+    output_dataset = anonymise_dicom_recursively(input_dataset, ["DX"], tag_actions)
 
     # Check that the nested private tag has been deleted
     assert (0x0009, 0x0011) not in output_dataset
