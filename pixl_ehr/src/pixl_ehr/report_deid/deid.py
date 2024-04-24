@@ -30,7 +30,7 @@ def deidentify_text(text: str) -> str:
     response = requests.post(
         COGSTACK_URL,
         data={"text": text, "modelid": "6"},
-        headers={"Content-Type": "text/plain"},
+        headers={"accept": "application/json"},
         timeout=10,
         auth=HTTPBasicAuth(COGSTACK_USER, COGSTACK_PASSWORD),
     )
@@ -43,5 +43,5 @@ def deidentify_text(text: str) -> str:
             f"Content: {response.content.decode()}"
         )
         raise requests.HTTPError(msg)
-
-    return response.text
+    data = response.json()
+    return "\n".join(data["results"])
