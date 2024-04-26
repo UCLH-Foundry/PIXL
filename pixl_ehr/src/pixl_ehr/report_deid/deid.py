@@ -43,5 +43,4 @@ def deidentify_text(text: str) -> str:
             f"Content: {response.content.decode()}"
         )
         raise requests.HTTPError(msg)
-    data = response.json()
-    return "\n".join(data["results"])
+    return response.text
