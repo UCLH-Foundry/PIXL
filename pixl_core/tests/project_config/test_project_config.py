@@ -160,6 +160,8 @@ FILTER_SET_BROKEN = ["", "Badg"]
         # And then some weird cases.
         # Empty series string never gets excluded
         (FILTER_SET_2, "", False),
+        # Null series description, never gets excluded
+        (FILTER_SET_2, None, False),
         # Empty exclude string matches everything - not ideal but let's fix it when we decide
         # what to do about regexes etc.
         (FILTER_SET_BROKEN, "Mushroom", True),
