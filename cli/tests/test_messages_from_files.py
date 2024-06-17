@@ -47,9 +47,9 @@ def test_messages_from_csv(omop_resources: Path) -> None:
             mrn="patient_identifier",
             accession_number="123456789",
             study_date=datetime.date.fromisoformat("2022-01-01"),
-            procedure_occurrence_id="0",
+            procedure_occurrence_id=0,
             project_name="ms-pinpoint-test",
-            extract_generated_timestamp=datetime.datetime(2022, 1, 1, 0, 1, tzinfo=datetime.UTC),
+            extract_generated_timestamp=datetime.datetime.fromisoformat("2023-01-01T00:01:00Z"),
         ),
     ]
     assert messages == expected_messages

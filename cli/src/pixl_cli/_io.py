@@ -16,7 +16,7 @@
 from __future__ import annotations
 
 import json
-from datetime import UTC, datetime
+from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -69,8 +69,18 @@ def messages_from_csv(filepath: Path) -> list[Message]:
 
     # First line is column names
     messages_df = pd.read_csv(filepath, header=0, dtype=str)
-
     _raise_if_column_names_not_found(messages_df, expected_col_names)
+    # Parse non string columns
+    messages_df["procedure_id"] = messages_df["procedure_id"].astype(int)
+    messages_df["study_date"] = pd.to_datetime(
+        messages_df["study_date"], format="%Y-%m-%d", errors="raise"
+    ).dt.date
+    messages_df["extract_generated_timestamp"] = pd.to_datetime(
+        messages_df["extract_generated_timestamp"],
+        format="%Y-%m-%dT%H:%M:%SZ",
+        errors="raise",
+        utc=True,
+    )
 
     (
         procedure_id_col_name,
@@ -86,14 +96,10 @@ def messages_from_csv(filepath: Path) -> list[Message]:
         message = Message(
             mrn=row[mrn_col_name],
             accession_number=row[acc_num_col_name],
-            study_date=datetime.strptime(row[dt_col_name], "%d/%m/%Y %H:%M")
-            .replace(tzinfo=UTC)
-            .date(),
+            study_date=row[dt_col_name],
             procedure_occurrence_id=row[procedure_id_col_name],
             project_name=row[project_col_name],
-            extract_generated_timestamp=datetime.strptime(
-                row[extract_col_name], "%d/%m/%Y %H:%M"
-            ).replace(tzinfo=UTC),
+            extract_generated_timestamp=row[extract_col_name].to_pydatetime(),
         )
         messages.append(message)
 
