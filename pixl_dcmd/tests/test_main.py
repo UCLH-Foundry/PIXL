@@ -13,6 +13,7 @@
 #  limitations under the License.
 from __future__ import annotations
 
+import logging
 import pathlib
 import re
 from pathlib import Path
@@ -22,11 +23,6 @@ import numpy as np
 import pydicom
 import pytest
 import sqlalchemy
-from decouple import config
-from pydicom.data import get_testdata_file
-from pydicom.dataset import Dataset
-from pydicom.uid import UID
-
 from core.db.models import Image
 from core.dicom_tags import (
     DICOM_TAG_PROJECT_NAME,
@@ -35,15 +31,19 @@ from core.dicom_tags import (
     create_private_tag,
 )
 from core.project_config import load_project_config, load_tag_operations
-from pytest_pixl.dicom import generate_dicom_dataset
-from pytest_pixl.helpers import run_subprocess
-
+from decouple import config
 from pixl_dcmd.main import (
     _anonymise_dicom_from_scheme,
-    enforce_whitelist,
+    anonymise_and_validate_dicom,
     anonymise_dicom,
+    enforce_whitelist,
     should_exclude_series,
 )
+from pydicom.data import get_testdata_file
+from pydicom.dataset import Dataset
+from pydicom.uid import UID
+from pytest_pixl.dicom import generate_dicom_dataset
+from pytest_pixl.helpers import run_subprocess
 
 PROJECT_CONFIGS_DIR = Path(config("PROJECT_CONFIGS_DIR"))
 TEST_PROJECT_SLUG = "test-extract-uclh-omop-cdm"
@@ -76,26 +76,6 @@ def _mri_diffusion_tags(manufacturer: str = "Philips") -> list[PrivateDicomTag]:
         create_private_tag(tag["group"], tag["element"], vr="SH", value="test")
         for tag in manufacturer_overrides["tags"]
     ]
-
-
-@pytest.fixture()
-def vanilla_dicom_image() -> Dataset:
-    """
-    A DICOM image with diffusion data to test the anonymisation process.
-    Private tags were added to match the tag operations defined in the project config, so we can
-    test whether the anonymisation process works as expected when defining overrides.
-    """
-    ds = generate_dicom_dataset(Modality="DX")
-
-    # Make sure the project name tag is added for anonymisation to work
-    add_private_tag(ds, DICOM_TAG_PROJECT_NAME)
-    # Update the project name tag to a known value
-    block = ds.private_block(
-        DICOM_TAG_PROJECT_NAME.group_id, DICOM_TAG_PROJECT_NAME.creator_string
-    )
-    ds[block.get_tag(DICOM_TAG_PROJECT_NAME.offset_id)].value = TEST_PROJECT_SLUG
-
-    return ds
 
 
 @pytest.fixture()
@@ -133,7 +113,7 @@ def test_enforce_whitelist_removes_overlay_plane() -> None:
     assert (0x6000, 0x3000) not in ds
 
 
-def test_anonymisation(row_for_dicom_testing, vanilla_dicom_image: Dataset) -> None:
+def test_anonymisation(vanilla_dicom_image: Dataset) -> None:
     """
     Test whether anonymisation works as expected on a vanilla DICOM dataset
     """
@@ -151,9 +131,20 @@ def test_anonymisation(row_for_dicom_testing, vanilla_dicom_image: Dataset) -> N
     assert "StudyDate" not in vanilla_dicom_image
 
 
-def test_anonymisation_with_overrides(
-    row_for_dicom_testing, mri_diffusion_dicom_image: Dataset
-) -> None:
+def test_anonymisation_and_validation(vanilla_dicom_image: Dataset, caplog) -> None:
+    """
+    Test whether anonymisation and validation works as expected on a vanilla DICOM dataset
+    No warnings should be generated for a valid anonymisation
+    """
+    caplog.clear()
+    caplog.set_level(logging.WARNING)
+    validation_errors = anonymise_and_validate_dicom(vanilla_dicom_image)
+    # Check no warnings were generated
+    assert "WARNING" not in [record.levelname for record in caplog.records]
+    assert not validation_errors
+
+
+def test_anonymisation_with_overrides(mri_diffusion_dicom_image: Dataset) -> None:
     """
     Test that the anonymisation process works with manufacturer overrides.
     GIVEN a dicom image with manufacturer-specific private tags

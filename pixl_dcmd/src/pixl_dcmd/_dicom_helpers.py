@@ -15,10 +15,14 @@
 
 from __future__ import annotations
 
-from pydicom import Dataset
-from loguru import logger
+import logging
+from pathlib import Path
 
 from core.dicom_tags import DICOM_TAG_PROJECT_NAME
+from dicom_validator.spec_reader.edition_reader import EditionReader
+from dicom_validator.validator.iod_validator import IODValidator
+from loguru import logger
+from pydicom import Dataset
 
 
 def get_project_name_as_string(dataset: Dataset) -> str:
@@ -35,3 +39,47 @@ def get_project_name_as_string(dataset: Dataset) -> str:
         logger.debug(f"String slug '{raw_slug}'")
         slug = raw_slug
     return slug
+
+
+class DicomValidator:
+    def __init__(self, edition: str = "current"):
+        self.edition = edition
+
+        # Default from dicom_validator but defining here to be explicit
+        standard_path = str(Path.home() / "dicom-validator")
+        edition_reader = EditionReader(standard_path)
+        destination = edition_reader.get_revision(self.edition, False)
+        json_path = Path(destination, "json")
+        self.dicom_info = EditionReader.load_dicom_info(json_path)
+
+    def validate_original(self, dataset: Dataset) -> None:
+        # Temporarily disable logging to avoid spamming the console
+        logging.disable(logging.ERROR)
+        self.original_errors = IODValidator(dataset, self.dicom_info).validate()
+        logging.disable(logging.NOTSET)
+
+    def validate_anonymised(self, dataset: Dataset) -> dict:
+        # Check that the original dataset has been validated
+        try:
+            orig_errors = self.original_errors
+        except AttributeError:
+            raise ValueError("Original dataset not yet validated")
+
+        # Temporarily disable logging to avoid spamming the console
+        logging.disable(logging.ERROR)
+        self.anon_errors = IODValidator(dataset, self.dicom_info).validate()
+        logging.disable(logging.NOTSET)
+
+        self.diff_errors: dict = {}
+
+        for key in self.anon_errors.keys():
+            if key in self.original_errors.keys():
+                # Keep only errors introduced after the anonymisation
+                # The keys of the dictionary containt the actual errors
+                diff = set(self.anon_errors[key].keys()) - set(orig_errors[key].keys())
+                if diff:
+                    self.diff_errors[key] = diff
+            else:
+                self.diff_errors[key] = self.anon_errors[key]
+
+        return self.diff_errors

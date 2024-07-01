@@ -37,7 +37,11 @@ from loguru import logger
 from pydicom import dcmread
 
 import orthanc
-from pixl_dcmd.main import anonymise_dicom, should_exclude_series, write_dataset_to_bytes
+from pixl_dcmd.main import (
+    anonymise_and_validate_dicom,
+    should_exclude_series,
+    write_dataset_to_bytes,
+)
 
 if TYPE_CHECKING:
     from typing import Any
@@ -243,7 +247,7 @@ def _process_dicom_instance(receivedDicom: bytes) -> tuple[orthanc.ReceivedInsta
 
     # Attempt to anonymise and drop the study if any exceptions occur
     try:
-        anonymise_dicom(dataset)
+        anonymise_and_validate_dicom(dataset)
         return orthanc.ReceivedInstanceAction.MODIFY, write_dataset_to_bytes(dataset)
     except PixlDiscardError as error:
         logger.debug("Skipping instance: {}", error)

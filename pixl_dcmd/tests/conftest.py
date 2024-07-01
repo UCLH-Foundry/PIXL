@@ -15,17 +15,23 @@
 
 from __future__ import annotations
 
-from collections.abc import Generator
 import datetime
 import os
 import pathlib
 import tempfile
+from collections.abc import Generator
 from typing import Optional
 
 import pytest
 import pytest_pixl.dicom
 import requests
 from core.db.models import Base, Extract, Image
+from core.dicom_tags import (
+    DICOM_TAG_PROJECT_NAME,
+    add_private_tag,
+)
+from pydicom import Dataset
+from pytest_pixl.dicom import generate_dicom_dataset
 from sqlalchemy import Engine, create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
@@ -176,3 +182,25 @@ def mock_header_record_path(monkeypatch, tmpdir):
         return os.environ.get(key, default)
 
     monkeypatch.setattr(os.environ, "get", mock_get)
+
+
+@pytest.fixture()
+def vanilla_dicom_image(row_for_dicom_testing) -> Dataset:
+    """
+    A DICOM image with diffusion data to test the anonymisation process.
+    Private tags were added to match the tag operations defined in the project config, so we can
+    test whether the anonymisation process works as expected when defining overrides.
+    The row_for_dicom_testing dependency is to make sure the database is populated with the
+    project slug, which is used to anonymise the DICOM image.
+    """
+    ds = generate_dicom_dataset(Modality="DX")
+
+    # Make sure the project name tag is added for anonymisation to work
+    add_private_tag(ds, DICOM_TAG_PROJECT_NAME)
+    # Update the project name tag to a known value
+    block = ds.private_block(
+        DICOM_TAG_PROJECT_NAME.group_id, DICOM_TAG_PROJECT_NAME.creator_string
+    )
+    ds[block.get_tag(DICOM_TAG_PROJECT_NAME.offset_id)].value = TEST_PROJECT_SLUG
+
+    return ds

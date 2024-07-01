@@ -16,6 +16,7 @@ dependencies = [
     "python-decouple==3.6",
     "pyOpenSSL==24.0.0",
     "requests==2.31.0",
+    "pytest-loguru==0.4.0",
 ]
 
 [project.optional-dependencies]
