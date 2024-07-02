@@ -166,7 +166,8 @@ def notify_export_api_of_readiness(study_id: str):
     """
     url = EXPORT_API_URL + "/export-dicom-from-orthanc"
     payload = {"study_id": study_id}
-    response = requests.post(url, json=payload, timeout=30)
+    timeout: float = config("PIXL_DICOM_TRANSFER_TIMEOUT", default=180, cast=float)
+    response = requests.post(url, json=payload, timeout=timeout)
     response.raise_for_status()
 
 

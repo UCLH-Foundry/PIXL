@@ -42,5 +42,11 @@ COPY ./pixl_dcmd/ /pixl_dcmd
 RUN --mount=type=cache,target=/root/.cache \
     /.venv/bin/pip install --no-cache-dir --force-reinstall --no-deps ./pixl_dcmd
 
+ARG ORTHANC_CONCURRENT_JOBS
+COPY ./orthanc/orthanc-anon/config /run/secrets
+
+RUN sed -i "s/\${ORTHANC_CONCURRENT_JOBS}/${ORTHANC_CONCURRENT_JOBS:-5}/g" /run/secrets/orthanc.json
+
+
 ENV PYTHONPATH=/.venv/lib64/python3.11/site-packages/
 

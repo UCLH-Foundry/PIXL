@@ -18,6 +18,7 @@ from typing import cast
 
 from core.db.models import Extract, Image
 from core.patient_queue.message import Message
+from loguru import logger
 from sqlalchemy import URL, create_engine, not_
 from sqlalchemy.orm import Session, sessionmaker
 
@@ -82,7 +83,7 @@ def _get_image_and_check_exported(
     if extract_created:
         new_image = _add_new_image_to_session(extract, message, session)
         return new_image, False
-
+    logger.debug("Processing {}", message)
     existing_image = (
         session.query(Image)
         .filter(

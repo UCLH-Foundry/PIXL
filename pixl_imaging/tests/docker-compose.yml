@@ -51,6 +51,8 @@ services:
         build:
             context: ../../
             dockerfile: ./docker/orthanc-raw/Dockerfile
+            args:
+                PIXL_DICOM_TRANSFER_TIMEOUT: 20
         environment:
             ORTHANC_NAME: "PIXL: Raw"
             ORTHANC_USERNAME: "orthanc"

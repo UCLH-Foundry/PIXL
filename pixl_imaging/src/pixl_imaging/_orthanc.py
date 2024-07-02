@@ -75,20 +75,30 @@ class Orthanc(ABC):
         study_id: str,
         private_creator: str,
         tag_replacement: dict,
-    ) -> Any:
+        timeout: float,
+    ) -> None:
         # According to the docs, you can't modify tags for an instance using the instance API
         # (the best you can do is download a modified version), so do it via the studies API.
         # KeepSource=false needed to stop it making a copy
         # https://orthanc.uclouvain.be/api/index.html#tag/Studies/paths/~1studies~1{id}~1modify/post
-        return await self._post(
+        response = await self._post(
             f"/studies/{study_id}/modify",
             {
                 "PrivateCreator": private_creator,
                 "Permissive": False,
                 "KeepSource": False,
                 "Replace": tag_replacement,
+                "Asynchronous": True,
             },
         )
+        logger.debug("Modify studies Job: {}", response)
+        job_id = str(response["ID"])
+        try:
+            await self.wait_for_job_success_or_raise(job_id, "modify", timeout=timeout)
+        except PixlDiscardError:
+            logger.warning(f"Deleting study {study_id} as modify job failed")
+            await self.delete(f"/studies/{study_id}")
+            raise
 
     async def retrieve_from_remote(self, query_id: str) -> str:
         response = await self._post(
@@ -97,9 +107,10 @@ class Orthanc(ABC):
         )
         return str(response["ID"])
 
-    async def wait_for_job_success_or_raise(self, query_id: str, timeout: float) -> None:
+    async def wait_for_job_success_or_raise(
+        self, job_id: str, job_type: str, timeout: float
+    ) -> None:
         """Wait for job to complete successfully, or raise exception if fails or exceeds timeout."""
-        job_id = await self.retrieve_from_remote(query_id=query_id)  # C-Move
         job_info = {"State": "Pending"}
         start_time = time()
 
@@ -110,12 +121,14 @@ class Orthanc(ABC):
                     f"Error code={job_info['ErrorCode']} Cause={job_info['ErrorDescription']}"
                 )
                 raise PixlDiscardError(msg)
-
+            if job_type == "modify":
+                logger.debug("Modify job: {}", job_info)
             if (time() - start_time) > timeout:
-                msg = f"Failed to transfer {job_id} in {timeout} seconds"
+                msg = f"Failed to finish {job_type} job {job_id} in {timeout} seconds"
+                await sleep(10)
                 raise PixlDiscardError(msg)
 
-            await sleep(1)
+            await sleep(10)
             job_info = await self.job_state(job_id=job_id)
 
     async def job_state(self, job_id: str) -> Any:
@@ -171,6 +184,16 @@ class PIXLRawOrthanc(Orthanc):
         PixlRequeueMessageError will cause the rabbitmq message to be requeued
         """
         jobs = await self.get_jobs()
+        unfinished_jobs = [x for x in jobs if x["State"] not in ("Success", "Failure")]
+        for job in unfinished_jobs:
+            logger.trace(
+                "{}, {}, {}, {}, {}",
+                job["State"],
+                job.get("CreationTime"),
+                job.get("ID"),
+                job.get("Type"),
+                job.get("EffectiveRuntime"),
+            )
         for job in jobs:
             if job["State"] == "Pending":
                 msg = "Pending messages in orthanc raw"

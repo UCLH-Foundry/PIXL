@@ -13,13 +13,18 @@
   // doubling them, or replaced by forward slashes "/".
   "StorageDirectory" : "/var/lib/orthanc/db",
 
+  // overwrite instances with the same UID if we get them for a second time
+  "OverwriteInstances" : true,
+
   // Limit the maximum number of instances
   "MaximumPatientCount": 200,
-
+  "MaximumStorageMode" : "Recycle",
   // Path to the directory that holds the SQLite index (if unset, the
   // value of StorageDirectory is used). This index could be stored on
   // a RAM-drive or a SSD device for performance reasons.
   "IndexDirectory" : "/var/lib/orthanc/db",
+
+  "ConcurrentJobs" : ${ORTHANC_CONCURRENT_JOBS}, // replaced in Dockerfile because its an integer
 
   // To enable plugins:
   "Plugins" : [ "/usr/share/orthanc/plugins" ],

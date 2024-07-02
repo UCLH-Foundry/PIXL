@@ -59,9 +59,9 @@ is geared towards stability. The asynchronous mode of transferring messages is a
 it is based on the [asyncio event loop](https://docs.python.org/3/library/asyncio-eventloop.html).
 
 We set the maximum number of message which can be being processed at once using the `PIXL_MAX_MESSAGES_IN_FLIGHT`
-variable in the `.env` file. Chest X-rays take about 5 seconds to return so the default of 100 allows for
-a maximum of 20 messages per second. The VNA should be able to cope with 12-15 per second, so this allows
-our rate limiting to fit within this range.
+variable in the `.env` file. The VNA allows for 5 DICOM transfers at a single point in time, so the default is 5.
+We recommend allowing more concurrent jobs using `ORTHANC_CONCURRENT_JOBS`, to allow for resource modification
+and export of stable DICOM to orthanc-anon while still pulling from the VNA.
 
 ### OMOP ES files
 

@@ -62,7 +62,7 @@ class DicomWebUploader(Uploader):
         self._validate_dicomweb_server()
 
         headers = {"content-type": "application/json", "accept": "application/dicom+json"}
-        payload = {"Resources": [study_id], "Synchronous": False}
+        payload = {"Resources": [study_id], "Synchronous": True}
 
         try:
             response = requests.post(

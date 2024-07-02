@@ -58,12 +58,25 @@ def OnChange(changeType, level, resourceId):  # noqa: ARG001
     This routes any stable study to a modality named PIXL-Anon if
     should_auto_route returns true
     """
-    if changeType == orthanc.ChangeType.STABLE_STUDY and should_auto_route():
+    if changeType != orthanc.ChangeType.STABLE_STUDY:
+        return
+    if _get_project_name_from_study_id(resourceId) == DICOM_TAG_PROJECT_NAME.PLACEHOLDER_VALUE:
+        logger.warning("Study {} has not been set with a pixl project name, deleting", resourceId)
+        orthanc.RestApiDelete(f"/studies/{resourceId}")
+        return
+    # delete via rest API and don't autoroute
+    if should_auto_route():
         logger.debug("Sending study: {}", resourceId)
         # Although this can throw, since we have nowhere to report errors
-        # back to (eg. an HTTP client), don't try to handle anything here.
+        # back to (e.g. an HTTP client), don't try to handle anything here.
         # The client will have to detect that it hasn't happened and retry.
         orthanc_anon_store_study(resourceId)
+
+
+def _get_project_name_from_study_id(study_id: str) -> str:
+    response_study = orthanc.RestApiGet(f"/studies/{study_id}/shared-tags?simplify=true")
+    json_response = json.loads(response_study)
+    return json_response["UCLHPIXLProjectName"]
 
 
 def orthanc_anon_store_study(resource_id):

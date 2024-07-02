@@ -37,6 +37,9 @@ secrets. Orthanc interprets all `.json` files in the `/run/secrets` mount as con
 - The anonymisation is carried out by an Orthanc Python plugin [pixl.py](./plugin/pixl.py). This
 plugin uses the [pixl_dcmd](../../pixl_dcmd/) package to apply the anonymisation scheme (and that
 in turn uses [Kitware Dicom Anonymizer](https://github.com/KitwareMedical/dicom-anonymizer))
+- Environmental variables:
+  - `PIXL_DICOM_TRANSFER_TIMEOUT` is used as the timeout for any REST API requests made from
+        orthanc-anon
 
 ### Step 1
 

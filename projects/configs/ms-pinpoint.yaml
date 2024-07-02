@@ -13,7 +13,7 @@
 #  limitations under the License.
 
 project:
-    name: "ms-pinpoint-internal-only"
+    name: "ms-pinpoint"
     modalities: ["MR"]
 
 tag_operation_files:

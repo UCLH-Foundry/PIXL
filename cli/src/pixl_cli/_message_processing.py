@@ -51,7 +51,9 @@ def retry_until_export_count_is_unchanged(
     for i in range(1, num_retries + 1):
         _wait_for_queues_to_empty(queues_to_populate)
         logger.info("Waiting 5 minutes for new extracts to be found")
-        with tqdm.tqdm(total_wait_seconds, desc="Waiting for series to be fully processed"):
+        for _ in tqdm.tqdm(
+            range(total_wait_seconds), desc="Waiting for series to be fully processed"
+        ):
             sleep(1)
 
         images = exported_images_for_project(project_name)

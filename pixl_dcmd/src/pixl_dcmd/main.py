@@ -77,7 +77,11 @@ def anonymise_dicom(dataset: Dataset) -> None:
         msg = f"Dropping DICOM Modality: {dataset.Modality}"
         raise PixlDiscardError(msg)
 
-    logger.info("Anonymising received instance")
+    study_identifiers = {
+        "mrn": dataset[0x0010, 0x0020].value,
+        "accession_number": dataset[0x0008, 0x0050].value,
+    }
+    logger.info("Anonymising received instance: {}", study_identifiers)
 
     # Merge tag schemes
     tag_operations = load_tag_operations(project_config)
@@ -85,7 +89,7 @@ def anonymise_dicom(dataset: Dataset) -> None:
 
     modalities = project_config.project.modalities
 
-    logger.info(
+    logger.debug(
         f"Applying DICOM tag anonymisation according to {project_config.tag_operation_files}"
     )
     logger.trace(f"Tag scheme: {tag_scheme}")
@@ -93,8 +97,6 @@ def anonymise_dicom(dataset: Dataset) -> None:
     if (0x0008, 0x0060) in dataset and dataset.Modality not in modalities:
         msg = f"Dropping DICOM Modality: {dataset.Modality}"
         raise PixlDiscardError(msg)
-
-    logger.info("Anonymising received instance")
 
     _anonymise_dicom_from_scheme(dataset, project_slug, tag_scheme)
 

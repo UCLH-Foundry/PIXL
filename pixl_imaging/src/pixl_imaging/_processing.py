@@ -34,47 +34,44 @@ async def process_message(message: Message) -> None:
     We may receive multiple messages with same Patient + Acc Num, either as retries or because
     they are needed for multiple projects.
     """
-    logger.debug("Processing: {}", message.identifier)
+    logger.trace("Processing: {}", message.identifier)
 
     study = ImagingStudy.from_message(message)
     orthanc_raw = PIXLRawOrthanc()
-    try:
-        await _process_message(study, orthanc_raw)
-    except PixlDiscardError:
-        # if a message has failed mid-transfer, can have partial study in orthanc-raw
-        # delete this so that it doesn't become stable and is exported
-        studies_to_delete = await orthanc_raw.query_local(study.orthanc_query_dict)
-        for study_to_delete in studies_to_delete:
-            logger.info(
-                "Deleting study '{}' from message {}", study_to_delete, study.message.identifier
-            )
-            await orthanc_raw.delete(f"/studies/{study_to_delete}")
-        raise
+    await _process_message(study, orthanc_raw)
 
 
 async def _process_message(study: ImagingStudy, orthanc_raw: PIXLRawOrthanc) -> None:
     await orthanc_raw.raise_if_pending_jobs()
+    logger.info("Processing: {}", study.message.identifier)
 
+    timeout: float = config("PIXL_DICOM_TRANSFER_TIMEOUT", cast=float)
     study_exists = await _update_or_resend_existing_study_(
-        study.message.project_name, orthanc_raw, study
+        study.message.project_name, orthanc_raw, study, timeout
     )
     if study_exists:
         return
 
     query_id = await _find_study_in_vna_or_raise(orthanc_raw, study)
-    timeout: float = config("PIXL_DICOM_TRANSFER_TIMEOUT", cast=float)
-    await orthanc_raw.wait_for_job_success_or_raise(query_id, timeout)
+    job_id = await orthanc_raw.retrieve_from_remote(query_id=query_id)  # C-Move
+    await orthanc_raw.wait_for_job_success_or_raise(job_id, "c-move", timeout)
 
     # Now that instance has arrived in orthanc raw, we can set its project name tag via the API
     studies = await orthanc_raw.query_local(study.orthanc_query_dict)
     logger.debug("Local instances for study: {}", studies)
-    await _add_project_to_study(study.message.project_name, orthanc_raw, studies)
+    await _add_project_to_study(
+        study.message.project_name,
+        orthanc_raw,
+        studies,
+        timeout=timeout,
+        image_identifier=study.message.identifier,
+    )
 
     return
 
 
 async def _update_or_resend_existing_study_(
-    project_name: str, orthanc_raw: PIXLRawOrthanc, study: ImagingStudy
+    project_name: str, orthanc_raw: PIXLRawOrthanc, study: ImagingStudy, timeout: float
 ) -> bool:
     """
     If study does not yet exist in orthanc raw, do nothing.
@@ -112,20 +109,27 @@ async def _update_or_resend_existing_study_(
             different_project.append(resource["ID"])
 
     if different_project:
-        await _add_project_to_study(project_name, orthanc_raw, different_project)
+        await _add_project_to_study(
+            project_name,
+            orthanc_raw,
+            different_project,
+            timeout=timeout,
+            image_identifier=study.message.identifier,
+        )
         return True
     await orthanc_raw.send_existing_study_to_anon(existing_resources[0]["ID"])
     return True
 
 
 async def _add_project_to_study(
-    project_name: str, orthanc_raw: PIXLRawOrthanc, studies: list[str]
+    project_name: str,
+    orthanc_raw: PIXLRawOrthanc,
+    studies: list[str],
+    timeout: float,
+    image_identifier: str,
 ) -> None:
     if len(studies) > 1:
-        logger.error(
-            "Got {} studies with matching accession number and patient ID, expected 1",
-            studies,
-        )
+        logger.warning("Got {} studies matching {}, expected 1", studies, image_identifier)
     for study in studies:
         logger.debug("Adding private tag to study ID {}", study)
         await orthanc_raw.modify_private_tags_by_study(
@@ -135,6 +139,7 @@ async def _add_project_to_study(
                 # The tag here needs to be defined in orthanc's dictionary
                 DICOM_TAG_PROJECT_NAME.tag_nickname: project_name,
             },
+            timeout=timeout,
         )
 
 
