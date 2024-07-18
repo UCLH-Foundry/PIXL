@@ -30,6 +30,7 @@ from io import BytesIO
 from typing import TYPE_CHECKING, Optional
 
 from core.dicom_tags import DICOM_TAG_PROJECT_NAME, add_private_tag
+from core.exceptions import PixlRequeueMessageError
 from decouple import config
 from loguru import logger
 from pydicom import dcmread
@@ -84,7 +85,13 @@ def _get_project_name_from_study_id(study_id: str) -> str:
 def orthanc_anon_store_study(resource_id):
     """Call the API to send the specified resource (study) to the orthanc anon server."""
     # RestApiPost raises an orthanc.OrthancException if it fails
-    orthanc.RestApiPost("/modalities/PIXL-Anon/store", resource_id)
+    try:
+        orthanc.RestApiPost("/modalities/PIXL-Anon/store", resource_id)
+    except orthanc.OrthancException as exception:
+        # If there's invalid dicom we should delete the resource and retry pulling the data again
+        if exception.message == "Bad file format":
+            orthanc.RestApiDelete(f"/studies/{resource_id}")
+        raise PixlRequeueMessageError from exception
     orthanc.LogInfo(f"Successfully sent study to anon modality: {resource_id}")
 
 
@@ -193,6 +200,9 @@ def SendResourceToAnon(output, uri, **request):  # noqa: ARG001
     except orthanc.OrthancException:
         err_str = "Failed contacting downstream server"
         log_and_return_http(output, 502, err_str)
+    except PixlRequeueMessageError:
+        err_str = "Invalid DICOM, should requeue message"
+        log_and_return_http(output, 422, err_str)
     except:
         err_str = "Misc error sending study to anon"
         log_and_return_http(output, 500, err_str)

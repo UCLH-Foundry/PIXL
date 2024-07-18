@@ -19,6 +19,7 @@ from time import time
 from typing import Any, Optional
 
 import aiohttp
+from aiohttp import ClientResponseError
 from core.exceptions import PixlDiscardError, PixlRequeueMessageError
 from decouple import config
 from loguru import logger
@@ -205,4 +206,12 @@ class PIXLRawOrthanc(Orthanc):
 
     async def send_existing_study_to_anon(self, resource_id: str) -> Any:
         """Send study to orthanc anon."""
-        return await self._post("/send-to-anon", data={"ResourceId": resource_id})
+        unprocessable_content_code = 522
+        try:
+            return await self._post("/send-to-anon", data={"ResourceId": resource_id})
+        except ClientResponseError as exception:
+            if exception.status == unprocessable_content_code:
+                message = f"Resource {resource_id} failed: {exception.message}"
+                logger.error(message)
+                raise PixlRequeueMessageError(message) from exception
+            raise
