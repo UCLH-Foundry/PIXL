@@ -19,7 +19,6 @@ from time import time
 from typing import Any, Optional
 
 import aiohttp
-from aiohttp import ClientResponseError
 from core.exceptions import PixlDiscardError, PixlRequeueMessageError
 from decouple import config
 from loguru import logger
@@ -50,7 +49,8 @@ class Orthanc(ABC):
         """Get expanded details for all jobs."""
         return await self._get("/jobs?expand")
 
-    async def query_local(self, data: dict) -> Any:
+    asynr def query_local(self, data: dict) -> Any:
+r/Er
         """Query local Orthanc instance for resourceId."""
         return await self._post("/tools/find", data=data)
 
@@ -209,7 +209,7 @@ class PIXLRawOrthanc(Orthanc):
         unprocessable_content_code = 522
         try:
             return await self._post("/send-to-anon", data={"ResourceId": resource_id})
-        except ClientResponseError as exception:
+        except aiohttp.client_exceptions.ClientResponseError as exception:
             if exception.status == unprocessable_content_code:
                 message = f"Resource {resource_id} failed: {exception.message}"
                 logger.error(message)

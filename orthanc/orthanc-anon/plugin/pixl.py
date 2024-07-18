@@ -251,7 +251,7 @@ def _process_dicom_instance(receivedDicom: bytes) -> tuple[orthanc.ReceivedInsta
         anonymise_and_validate_dicom(dataset)
         return orthanc.ReceivedInstanceAction.MODIFY, write_dataset_to_bytes(dataset)
     except PixlDiscardError as error:
-        logger.debug("Skipping instance: {}", error)
+        logger.info("Skipping instance: {}", error)
         return orthanc.ReceivedInstanceAction.DISCARD, None
 
 

@@ -63,7 +63,6 @@ def anonymise_and_validate_dicom(dataset: Dataset) -> dict:
     # Set up Dicom validator and validate the original dataset
     dicom_validator = DicomValidator(edition="current")
     dicom_validator.validate_original(dataset)
-
     anonymise_dicom(dataset)
 
     # Validate the anonymised dataset
@@ -85,7 +84,6 @@ def anonymise_dicom(dataset: Dataset) -> None:
     - deleting any tags not in the tag scheme recursively
     """
     project_slug = get_project_name_as_string(dataset)
-
     project_config = load_project_config(project_slug)
     logger.debug(f"Received instance for project {project_slug}")
     if dataset.Modality not in project_config.project.modalities:
