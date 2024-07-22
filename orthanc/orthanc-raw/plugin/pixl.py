@@ -89,7 +89,6 @@ def orthanc_anon_store_study(resource_id):
         orthanc.RestApiPost("/modalities/PIXL-Anon/store", resource_id)
     except orthanc.OrthancException as exception:
         # If there's invalid dicom we should delete the resource and retry pulling the data again
-        logger.info("{}, {}", exception.args, dir(exception))
         if "Bad file format" in exception.args:
             orthanc.RestApiDelete(f"/studies/{resource_id}")
             raise PixlRequeueMessageError from exception
