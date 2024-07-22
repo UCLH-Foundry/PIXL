@@ -117,7 +117,7 @@ async def _update_or_resend_existing_study_(
             image_identifier=study.message.identifier,
         )
         return True
-    await orthanc_raw.send_existing_study_to_anon(existing_resources[0]["ID"])
+    await orthanc_raw.send_existing_study_to_anon(existing_resources[0]["ID"], study)
     return True
 
 

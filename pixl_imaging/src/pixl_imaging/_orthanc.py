@@ -16,12 +16,15 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from asyncio import sleep
 from time import time
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 import aiohttp
 from core.exceptions import PixlDiscardError, PixlRequeueMessageError
 from decouple import config
 from loguru import logger
+
+if TYPE_CHECKING:
+    from pixl_imaging._processing import ImagingStudy
 
 
 class Orthanc(ABC):
@@ -203,14 +206,16 @@ class PIXLRawOrthanc(Orthanc):
     def aet(self) -> str:
         return str(config("ORTHANC_RAW_AE_TITLE"))
 
-    async def send_existing_study_to_anon(self, resource_id: str) -> Any:
+    async def send_existing_study_to_anon(self, resource_id: str, study: ImagingStudy) -> Any:
         """Send study to orthanc anon."""
         unprocessable_content_code = 422
         try:
             return await self._post("/send-to-anon", data={"ResourceId": resource_id})
         except aiohttp.client_exceptions.ClientResponseError as exception:
             if exception.status == unprocessable_content_code:
-                message = f"Resource {resource_id} failed: {exception.message}"
+                message = (
+                    f"{study.message.identifier} had bad file format. Will requeue for processing"
+                )
                 logger.error(message)
                 raise PixlRequeueMessageError(message) from exception
             raise
