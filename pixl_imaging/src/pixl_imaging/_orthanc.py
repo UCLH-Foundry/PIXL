@@ -49,8 +49,7 @@ class Orthanc(ABC):
         """Get expanded details for all jobs."""
         return await self._get("/jobs?expand")
 
-    asynr def query_local(self, data: dict) -> Any:
-r/Er
+    async def query_local(self, data: dict) -> Any:
         """Query local Orthanc instance for resourceId."""
         return await self._post("/tools/find", data=data)
 
@@ -206,7 +205,7 @@ class PIXLRawOrthanc(Orthanc):
 
     async def send_existing_study_to_anon(self, resource_id: str) -> Any:
         """Send study to orthanc anon."""
-        unprocessable_content_code = 522
+        unprocessable_content_code = 422
         try:
             return await self._post("/send-to-anon", data={"ResourceId": resource_id})
         except aiohttp.client_exceptions.ClientResponseError as exception:
