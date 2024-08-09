@@ -140,7 +140,7 @@ def _make_message(project_name: str, accession_number: str, mrn: str, study_uid:
 
 
 @pytest.fixture()
-def example_messages():
+def example_messages() -> list[Message]:
     """Test input data."""
     return [
         _make_message(
@@ -159,6 +159,46 @@ def example_messages():
 def example_messages_df(example_messages):
     """Test input data in a DataFrame."""
     return pd.DataFrame.from_records([vars(im) for im in example_messages])
+
+
+@pytest.fixture()
+def example_messages_multiple_projects() -> list[Message]:
+    """Test input data."""
+    return [
+        _make_message(
+            project_name="i-am-a-project", accession_number="123", mrn="mrn", study_uid="1.2.3"
+        ),
+        _make_message(
+            project_name="i-am-a-project", accession_number="234", mrn="mrn", study_uid="2.3.4"
+        ),
+        _make_message(
+            project_name="i-am-a-project", accession_number="345", mrn="mrn", study_uid="3.4.5"
+        ),
+        _make_message(
+            project_name="i-am-another-project",
+            accession_number="123",
+            mrn="mrn",
+            study_uid="1.2.3",
+        ),
+        _make_message(
+            project_name="i-am-another-project",
+            accession_number="234",
+            mrn="mrn",
+            study_uid="2.3.4",
+        ),
+        _make_message(
+            project_name="i-am-another-project",
+            accession_number="345",
+            mrn="mrn",
+            study_uid="3.4.5",
+        ),
+    ]
+
+
+@pytest.fixture()
+def example_messages_multiple_projects_df(example_messages_multiple_projects) -> pd.DataFrame:
+    """Test input data."""
+    return pd.DataFrame.from_records([vars(im) for im in example_messages_multiple_projects])
 
 
 @pytest.fixture()

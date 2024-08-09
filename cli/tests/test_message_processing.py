@@ -40,17 +40,16 @@ def mock_publisher(mocker) -> Generator[Mock, None, None]:
 
 
 @pytest.mark.usefixtures("_zero_message_count")
-def test_no_retry_if_none_exported(example_messages, db_session, mock_publisher):
+def test_no_retry_if_none_exported(example_messages_df, db_session, mock_publisher):
     """
     GIVEN no images have been exported before starting, and num_retries set to 5
     WHEN rabbitmq messages set to zero and no messages are published to queue
     THEN populate_queue_and_db should never be called
     """
     os.environ["CLI_RETRY_SECONDS"] = "1"
-    project_name = example_messages[0].project_name
 
     retry_until_export_count_is_unchanged(
-        example_messages, num_retries=5, queues_to_populate=["imaging"], project_name=project_name
+        example_messages_df, num_retries=5, queues_to_populate=["imaging"]
     )
 
     mock_publisher.assert_not_called()
@@ -66,13 +65,31 @@ def test_retry_with_image_exported_and_no_change(
     THEN populate_queue_and_db should be called once
     """
     os.environ["CLI_RETRY_SECONDS"] = "1"
-    project_name = example_messages_df.iloc[0].project_name
 
     retry_until_export_count_is_unchanged(
         example_messages_df,
         num_retries=5,
         queues_to_populate=["imaging"],
-        project_name=project_name,
+    )
+
+    mock_publisher.assert_called_once()
+
+
+@pytest.mark.usefixtures("_zero_message_count")
+def test_retry_with_image_exported_and_no_change_multiple_projects(
+    example_messages_multiple_projects_df, rows_in_session, mock_publisher
+):
+    """
+    GIVEN one image across two projects has been exported, and num_retries set to 5
+    WHEN rabbitmq messages set to zero and no messages are published to queue
+    THEN populate_queue_and_db should be called once
+    """
+    os.environ["CLI_RETRY_SECONDS"] = "1"
+
+    retry_until_export_count_is_unchanged(
+        example_messages_multiple_projects_df,
+        num_retries=5,
+        queues_to_populate=["imaging"],
     )
 
     mock_publisher.assert_called_once()

@@ -58,7 +58,7 @@ def messages_from_df(
 
 
 def retry_until_export_count_is_unchanged(
-    messages_df: pd.DataFrame, num_retries: int, queues_to_populate: list[str], project_name: str
+    messages_df: pd.DataFrame, num_retries: int, queues_to_populate: list[str]
 ) -> None:
     """Retry populating messages until there is no change in the number of exported studies."""
     last_exported_count = 0
@@ -81,8 +81,15 @@ def retry_until_export_count_is_unchanged(
         ):
             sleep(1)
 
-        images = exported_images_for_project(project_name)
-        new_last_exported_count = len(images)
+        images = (
+            [
+                exported_images_for_project(project_name)
+                for project_name in messages_df["project_name"].unique()
+            ]
+            if messages_df["project_name"].size
+            else [[]]
+        )
+        new_last_exported_count = sum([len(project_images) for project_images in images])
         if new_last_exported_count == last_exported_count:
             logger.info(
                 "{} studies exported, didn't change between retries",

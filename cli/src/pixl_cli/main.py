@@ -152,13 +152,10 @@ def populate(  # too many args
 
     logger.info("Populating queue(s) {} from {}", queues_to_populate, parquet_path)
     messages_df = read_patient_info(parquet_path)
-    project_name = messages_df["project_name"].iloc[0]
 
     populate_queue_and_db(queues_to_populate, messages_df)
     if num_retries != 0:
-        retry_until_export_count_is_unchanged(
-            messages_df, num_retries, queues_to_populate, project_name
-        )
+        retry_until_export_count_is_unchanged(messages_df, num_retries, queues_to_populate)
 
 
 @cli.command()
