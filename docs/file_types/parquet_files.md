@@ -3,7 +3,7 @@
 ## OMOP-ES files
 
 From
-[OMOP-ES](https://github.com/UCLH-Foundry/the-rolling-skeleton/blob/main/docs/design/100-day-design.md#data-flow-through-components)
+[OMOP-ES](https://github.com/SAFEHR-data/the-rolling-skeleton/blob/main/docs/design/100-day-design.md#data-flow-through-components)
 we receive parquet files defining the data we need to export. These input files appear as 2 groups:
 
 1. **Public** parquet files: have had identifiers removed and replaced with a sequential ID for the

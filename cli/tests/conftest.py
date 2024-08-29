@@ -19,6 +19,7 @@ import datetime
 import os
 from pathlib import Path
 from typing import TYPE_CHECKING
+from zoneinfo import ZoneInfo
 
 import pandas as pd
 import pytest
@@ -62,6 +63,8 @@ os.environ["AZ_DICOM_ENDPOINT_TOKEN"] = "dicom endpoint token"
 os.environ["AZ_DICOM_ENDPOINT_CLIENT_ID"] = "dicom endpoint client id"
 os.environ["AZ_DICOM_ENDPOINT_CLIENT_SECRET"] = "dicom endpoint client secret"
 os.environ["AZ_DICOM_ENDPOINT_TENANT_ID"] = "dicom endpoint tenant id"
+
+os.environ["TZ"] = "Europe/London"
 
 
 @pytest.fixture(autouse=True)
@@ -140,7 +143,7 @@ def _make_message(
         study_uid=study_uid,
         study_date=STUDY_DATE,
         procedure_occurrence_id=1,
-        extract_generated_timestamp=datetime.datetime.now(tz=datetime.UTC),
+        extract_generated_timestamp=datetime.datetime.now(tz=ZoneInfo(os.environ["TZ"])),
     )
 
 
@@ -222,7 +225,7 @@ def rows_in_session(db_session) -> Session:
         study_uid="1.2.3",
         extract=extract,
         extract_id=extract.extract_id,
-        exported_at=datetime.datetime.now(tz=datetime.UTC),
+        exported_at=datetime.datetime.now(ZoneInfo(os.environ["TZ"])),
     )
     image_not_exported = Image(
         accession_number="234",

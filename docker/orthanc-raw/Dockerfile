@@ -14,12 +14,11 @@
 FROM orthancteam/orthanc:24.7.3@sha256:57a3d037729897331027ddc00c12695b50f1effbbf805f855396f3d0248d2d5f
 SHELL ["/bin/bash", "-o", "pipefail", "-e", "-u", "-x", "-c"]
 
-
 # Create a virtual environment, recommended since python 3.11 and Debian bookworm based images
 # where you get a warning when installing system-wide packages.
 RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get update && \
-    apt-get install --yes --no-install-recommends python3-venv
+    apt-get install --yes --no-install-recommends python3-venv tzdata
 RUN python3 -m venv /.venv
 
 # Install requirements before copying modules

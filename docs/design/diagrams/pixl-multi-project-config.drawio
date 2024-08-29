@@ -10,7 +10,7 @@
         <mxCell id="KNKUc1UJHXEjSF4-eD5e-1" value="&lt;h2&gt;Config template&lt;/h2&gt;" style="shape=hexagon;perimeter=hexagonPerimeter2;whiteSpace=wrap;html=1;fixedSize=1;fillColor=#e1d5e7;strokeColor=#9673a6;movable=1;resizable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;" parent="1" vertex="1">
           <mxGeometry x="70" y="90" width="120" height="80" as="geometry" />
         </mxCell>
-        <mxCell id="KNKUc1UJHXEjSF4-eD5e-2" value="&lt;pre&gt;&lt;span style=&quot;font-style: normal;&quot;&gt;UCLH-Foundry/PIXL&lt;/span&gt;&lt;/pre&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=1;points=[];autosize=1;strokeColor=none;fillColor=none;fontFamily=Courier New;fontStyle=2;movable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;" parent="1" vertex="1">
+        <mxCell id="KNKUc1UJHXEjSF4-eD5e-2" value="&lt;pre&gt;&lt;span style=&quot;font-style: normal;&quot;&gt;SAFEHR-data/PIXL&lt;/span&gt;&lt;/pre&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=1;points=[];autosize=1;strokeColor=none;fillColor=none;fontFamily=Courier New;fontStyle=2;movable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;" parent="1" vertex="1">
           <mxGeometry x="55" y="50" width="150" height="50" as="geometry" />
         </mxCell>
         <mxCell id="KNKUc1UJHXEjSF4-eD5e-53" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;curved=1;dashed=1;dashPattern=12 12;endArrow=none;endFill=0;entryX=1;entryY=0;entryDx=0;entryDy=0;movable=1;resizable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;" parent="1" source="KNKUc1UJHXEjSF4-eD5e-3" target="KNKUc1UJHXEjSF4-eD5e-51" edge="1">
@@ -25,7 +25,7 @@
         <mxCell id="KNKUc1UJHXEjSF4-eD5e-3" value="&lt;pre style=&quot;font-size: 15px;&quot;&gt;my_project.toml&lt;/pre&gt;" style="rounded=1;whiteSpace=wrap;html=1;fontSize=15;fillColor=#dae8fc;strokeColor=#6c8ebf;movable=1;resizable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;" parent="1" vertex="1">
           <mxGeometry x="260" y="95" width="140" height="70" as="geometry" />
         </mxCell>
-        <mxCell id="KNKUc1UJHXEjSF4-eD5e-5" value="&lt;pre&gt;UCLH-Foundry/PIXL&lt;/pre&gt;" style="swimlane;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;container=1;movable=1;resizable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;" parent="1" vertex="1">
+        <mxCell id="KNKUc1UJHXEjSF4-eD5e-5" value="&lt;pre&gt;SAFEHR-data/PIXL&lt;/pre&gt;" style="swimlane;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;container=1;movable=1;resizable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;" parent="1" vertex="1">
           <mxGeometry x="610" y="40" width="200" height="150" as="geometry" />
         </mxCell>
         <mxCell id="KNKUc1UJHXEjSF4-eD5e-11" value="" style="group;movable=1;resizable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;" parent="1" vertex="1" connectable="0">

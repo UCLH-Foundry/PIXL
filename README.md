@@ -1,14 +1,14 @@
-[![pixl-ci](https://github.com/UCLH-Foundry/PIXL/actions/workflows/main.yml/badge.svg)](https://github.com/UCLH-Foundry/PIXL/actions/workflows/main.yml)
-[![codecov](https://codecov.io/gh/UCLH-Foundry/PIXL/graph/badge.svg?token=99CHF3ZCAW)](https://codecov.io/gh/UCLH-Foundry/PIXL)
+[![pixl-ci](https://github.com/SAFEHR-data/PIXL/actions/workflows/main.yml/badge.svg)](https://github.com/SAFEHR-data/PIXL/actions/workflows/main.yml)
+[![codecov](https://codecov.io/gh/SAFEHR-data/PIXL/graph/badge.svg?token=99CHF3ZCAW)](https://codecov.io/gh/SAFEHR-data/PIXL)
 
 # PIXL
 
 PIXL Image eXtraction Laboratory
 
 `PIXL` is a system for extracting, linking and de-identifying DICOM imaging data, structured EHR data and free-text data from radiology reports at UCLH.
-Please see the [rolling-skeleton]([https://github.com/UCLH-Foundry/the-rolling-skeleton=](https://github.com/UCLH-Foundry/the-rolling-skeleton/blob/main/docs/design/100-day-design.md)) for more details.
+Please see the [rolling-skeleton]([https://github.com/SAFEHR-data/the-rolling-skeleton=](https://github.com/SAFEHR-data/the-rolling-skeleton/blob/main/docs/design/100-day-design.md)) for more details.
 
-PIXL is intended run on one of the [GAE](https://github.com/UCLH-Foundry/Book-of-FlowEHR/blob/main/glossary.md#gaes)s and comprises
+PIXL is intended run on one of the [GAE](https://github.com/SAFEHR-data/Book-of-FlowEHR/blob/main/glossary.md#gaes)s and comprises
 several services orchestrated by [Docker Compose](https://docs.docker.com/compose/).
 
 To get access to the GAE, [see the documentation on Slab](https://uclh.slab.com/posts/gae-access-7hkddxap)
@@ -22,7 +22,7 @@ python -m pip install -e pixl_core/
 python -m pip install -e cli/
 ```
 
-Note, the CLI currently [needs to be installed in editable mode](https://github.com/UCLH-Foundry/PIXL/issues/318).
+Note, the CLI currently [needs to be installed in editable mode](https://github.com/SAFEHR-data/PIXL/issues/318).
 
 ## Development
 
@@ -134,7 +134,7 @@ To configure a new project, follow these steps:
     >[!NOTE]
     > The project slug should match the [slugify](https://github.com/un33k/python-slugify)-ed project name in the `extract_summary.json` log file!
 
-2. [Open a PR in PIXL](https://github.com/UCLH-Foundry/PIXL/compare) to merge the new project config into `main`
+2. [Open a PR in PIXL](https://github.com/SAFEHR-data/PIXL/compare) to merge the new project config into `main`
 
 #### The config YAML file
 
@@ -302,6 +302,6 @@ FTPROOT/PROJECT_SLUG/EXTRACT_DATETIME/parquet/radiology/radiology.parquet
 * Generate your SSH keys as suggested [here](https://docs.github.com/en/github/authenticating-to-github/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent)
 * Clone the repository by typing (or copying) the following lines in a terminal
 ```
-git clone git@github.com:UCLH-Foundry/PIXL.git
+git clone git@github.com:SAFEHR-data/PIXL.git
 ```
 

@@ -42,6 +42,7 @@ services:
             RAW_DICOM_PORT: "4242"
             RAW_IP_ADDR: "orthanc-raw" # aka. hostname
             DICOM_WEB_PLUGIN_ENABLED: true
+            TZ: "Europe/London"
         ports:
             - "127.0.0.1:4243:4242"
             - "127.0.0.1:8043:8042"
@@ -66,6 +67,7 @@ services:
             RAW_DICOM_PORT: "4242"
             RAW_IP_ADDR: "dicom-web" # aka. hostname
             DICOM_WEB_PLUGIN_ENABLED: true
+            TZ: "Europe/London"
         ports:
             - "127.0.0.1:4244:4242"
             - "127.0.0.1:8044:8042"

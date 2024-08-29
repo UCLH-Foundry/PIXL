@@ -31,7 +31,7 @@ def test_validation_check_works(vanilla_dicom_image: Dataset) -> None:
 
 
 # TODO: add test for validation after anonymisation once our anonynimisation is standard compliant
-# https://github.com/UCLH-Foundry/PIXL/issues/418
+# https://github.com/SAFEHR-data/PIXL/issues/418
 
 
 @pytest.fixture()

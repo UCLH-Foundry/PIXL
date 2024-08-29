@@ -18,7 +18,7 @@ SHELL ["/bin/bash", "-o", "pipefail", "-e", "-u", "-x", "-c"]
 # where you get a warning when installing system-wide packages.
 RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get update && \
-    apt-get install --yes --no-install-recommends python3-venv
+    apt-get install --yes --no-install-recommends python3-venv tzdata
 RUN python3 -m venv /.venv
 
 # Install curl, used in system tests

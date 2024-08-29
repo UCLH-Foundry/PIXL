@@ -55,7 +55,7 @@ a project may be further defined and clarified by project maintainers.
 ## Enforcement
 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be
-reported by contacting the project team opening a [new issue](https://github.com/UCLH-Foundry/PIXL/issues/new/choose). 
+reported by contacting the project team opening a [new issue](https://github.com/SAFEHR-data/PIXL/issues/new/choose). 
 All complaints will be reviewed and investigated and will result in a response that
 is deemed necessary and appropriate to the circumstances. The project team is
 obligated to maintain confidentiality with regard to the reporter of an incident.

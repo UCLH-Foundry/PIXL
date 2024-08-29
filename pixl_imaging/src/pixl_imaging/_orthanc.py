@@ -63,11 +63,19 @@ class Orthanc(ABC):
             timeout=config("PIXL_QUERY_TIMEOUT", default=10, cast=float),
         )
         logger.debug("Query response: {}", response)
-        query_answers = await self._get(f"/queries/{response['ID']}/answers")
+        query_answers = await self.get_remote_query_answers(response["ID"])
         if len(query_answers) > 0:
             return str(response["ID"])
 
         return None
+
+    async def get_remote_query_answers(self, query_id: str) -> Any:
+        """Get the answers to a query"""
+        return await self._get(f"/queries/{query_id}/answers")
+
+    async def get_remote_query_answer_content(self, query_id: str, answer_id: str) -> Any:
+        """Get the content of a query answer"""
+        return await self._get(f"/queries/{query_id}/answers/{answer_id}/content")
 
     async def modify_private_tags_by_study(
         self,

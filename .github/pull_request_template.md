@@ -20,8 +20,8 @@ Please delete options accordingly to the description.
 - [ ] I have made corresponding changes to the documentation.
 - [ ] My changes generate no new warnings.
 - [ ] I have commented my code, particularly in hard-to-understand areas.
-- [ ] I have passed on my local host device. (see further details at the [CONTRIBUTING](https://github.com/UCLH-Foundry/PIXL/blob/main/CONTRIBUTING.md#local-testing) document)
-- [ ] Make sure your branch is up-to-date with main branch. See [CONTRIBUTING](https://github.com/UCLH-Foundry/PIXL/blob/main/CONTRIBUTING.md) for a general example to syncronise your branch with the `main` branch.
+- [ ] I have passed on my local host device. (see further details at the [CONTRIBUTING](https://github.com/SAFEHR-data/PIXL/blob/main/CONTRIBUTING.md#local-testing) document)
+- [ ] Make sure your branch is up-to-date with main branch. See [CONTRIBUTING](https://github.com/SAFEHR-data/PIXL/blob/main/CONTRIBUTING.md) for a general example to syncronise your branch with the `main` branch.
 - [ ] I have requested PR review to `UCLH-Foundtry/arc-dev`
 - [ ] I have adddressed and marked as resolved all the review comments in my PR.
 - [ ] Finally, I have selected `squash and merge`

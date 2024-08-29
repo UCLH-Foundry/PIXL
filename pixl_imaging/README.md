@@ -1,9 +1,18 @@
 # PIXL Imaging API
 
-The PIXL imaging API processes messages from the imaging queue created by the [CLI](../cli/README.md) 
-to query images from the [VNA](https://en.wikipedia.org/wiki/Vendor_Neutral_Archive) and transfers them to the [`orthanc-raw` instance](../orthanc/orthanc-raw/README.md).
+The PIXL imaging API processes messages from the imaging queue created by the [CLI](../cli/README.md)
+to query images from a dicom server and transfer them to the [`orthanc-raw` instance](../orthanc/orthanc-raw/README.md).
 
-It exposes a single HTTP endpoint that expects a JSON-formatted message structured as defined by the
+The imaging API will:
+
+- query the [VNA](https://en.wikipedia.org/wiki/Vendor_Neutral_Archive) for existing images
+- if a study is not found in the VNA, query
+  [PACS](https://en.wikipedia.org/wiki/Picture_archiving_and_communication_system) for existing images.
+  The study will only be pulled if it's available
+  [ONLINE](https://dicom.nema.org/medical/dicom/2020b/output/chtml/part03/sect_C.4.23.html) (i.e.
+  it can be pulled from the Retrieve AE Title)
+
+The imaging API exposes a single HTTP endpoint that expects a JSON-formatted message structured as defined by the
 [`Message`](../pixl_core/src/core/patient_queue/message.py) class in `pixl_core/patient_queue`.
 On arrival of the input message it will issue a DICOMWeb request to `orthanc-raw`, which then queries the VNA
 for the requested imaging study, if it didn't already exist.

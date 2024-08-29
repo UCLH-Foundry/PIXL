@@ -16,7 +16,7 @@ SHELL ["/bin/bash", "-o", "pipefail", "-e", "-u", "-x", "-c"]
 
 ARG TEST="false"
 
-RUN export DEBIAN_FRONTEND=noninteractive && \
+RUN export DEBIAN_FRONTEND=noninteractive  && \
     apt-get update && \
     apt-get install --yes --no-install-recommends \
         procps \
@@ -25,7 +25,8 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
         libpq-dev \
         curl \
         gnupg \
-        locales
+        locales \
+        tzdata
 RUN sed -i '/en_GB.UTF-8/s/^# //g' /etc/locale.gen && locale-gen
 RUN  apt-get autoremove && apt-get clean && rm -rf /var/lib/apt/lists/*
 

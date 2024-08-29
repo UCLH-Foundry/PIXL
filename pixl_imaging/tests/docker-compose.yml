@@ -33,16 +33,34 @@ services:
     vna-qr:
         image: orthancteam/orthanc:24.3.3
         environment:
-            ORTHANC_NAME: "VNAQR"
+            ORTHANC_NAME: "PRIMARYQR"
             ORTHANC_USERNAME: "orthanc"
             ORTHANC_PASSWORD: "orthanc"
-            ORTHANC_AE_TITLE: "VNAQR"
+            ORTHANC_AE_TITLE: "PRIMARYQR"
             RAW_AE_TITLE: "PIXLRAW"
             RAW_DICOM_PORT: "4242"
             RAW_IP_ADDR: "orthanc-raw" # aka. hostname
+            TZ: ${TZ:-Europe/London}
         ports:
             - "127.0.0.1:4243:4242"
             - "127.0.0.1:8043:8042"
+        volumes:
+            - ../../test/vna_config/:/run/secrets:ro
+        <<: *orthanc-healthcheck
+    pacs-qr:
+        image: orthancteam/orthanc:24.3.3
+        environment:
+            ORTHANC_NAME: "SECONDARYQR"
+            ORTHANC_USERNAME: "orthanc"
+            ORTHANC_PASSWORD: "orthanc"
+            ORTHANC_AE_TITLE: "SECONDARYQR"
+            RAW_AE_TITLE: "PIXLRAW"
+            RAW_DICOM_PORT: "4242"
+            RAW_IP_ADDR: "orthanc-raw" # aka. hostname
+            TZ: ${TZ:-Europe/London}
+        ports:
+            - "127.0.0.1:4245:4242"
+            - "127.0.0.1:8045:8042"
         volumes:
             - ../../test/vna_config/:/run/secrets:ro
         <<: *orthanc-healthcheck
@@ -58,14 +76,18 @@ services:
             ORTHANC_USERNAME: "orthanc"
             ORTHANC_PASSWORD: "orthanc"
             ORTHANC_AE_TITLE: "PIXLRAW"
-            VNAQR_AE_TITLE: "VNAQR"
-            VNAQR_DICOM_PORT: "4242"
-            VNAQR_IP_ADDR: "vna-qr"
+            PRIMARY_DICOM_SOURCE_AE_TITLE: "PRIMARYQR"
+            PRIMARY_DICOM_SOURCE_PORT: "4242"
+            PRIMARY_DICOM_SOURCE_IP_ADDR: "vna-qr"
+            SECONDARY_DICOM_SOURCE_AE_TITLE: "SECONDARYQR"
+            SECONDARY_DICOM_SOURCE_PORT: "4242"
+            SECONDARY_DICOM_SOURCE_IP_ADDR: "pacs-qr"
             ORTHANC_ANON_AE_TITLE: "unused"
             ORTHANC_ANON_DICOM_PORT: "4242"
             ORTHANC_ANON_HOSTNAME: "orthanc-anon"
             ORTHANC_AUTOROUTE_RAW_TO_ANON: "false"
             PROJECT_CONFIGS_DIR: "/projects/configs"
+            TZ: "Europe/London"
         ports:
             - "127.0.0.1:4244:4242"
             - "127.0.0.1:8044:8042"

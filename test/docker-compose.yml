@@ -22,13 +22,14 @@ services:
         image: orthancteam/orthanc:24.3.3
         platform: linux/amd64
         environment:
-            ORTHANC_NAME: ${VNAQR_AE_TITLE}
+            ORTHANC_NAME: ${PRIMARY_DICOM_SOURCE_AE_TITLE}
             ORTHANC_USERNAME: "orthanc"
             ORTHANC_PASSWORD: "orthanc"
-            ORTHANC_AE_TITLE: "VNAQR"
+            ORTHANC_AE_TITLE: "PRIMARYQR"
             RAW_AE_TITLE: ${ORTHANC_RAW_AE_TITLE}
             RAW_DICOM_PORT: "4242"
             RAW_IP_ADDR: "orthanc-raw" # aka. hostname
+            TZ: ${TZ:-Europe/London}
         ports:
             - "127.0.0.1:4243:4242"
             - "127.0.0.1:8043:8042"
@@ -54,6 +55,7 @@ services:
             RAW_DICOM_PORT: "4242"
             RAW_IP_ADDR: "dicomweb-server" # aka. hostname
             DICOM_WEB_PLUGIN_ENABLED: true
+            TZ: ${TZ:-Europe/London}
         ports:
             - "127.0.0.1:4244:4242"
             - "127.0.0.1:8044:8042"

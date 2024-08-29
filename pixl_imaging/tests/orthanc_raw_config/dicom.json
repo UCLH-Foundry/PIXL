@@ -3,10 +3,16 @@
   "DicomAlwaysAllowEcho" : true,
   "DicomCheckModalityHost" : true,
   "DicomModalities" : {
-    "UCVNAQR" : {
-      "AET" : "${VNAQR_AE_TITLE}",
-      "Port" : "${VNAQR_DICOM_PORT}",
-      "Host" : "${VNAQR_IP_ADDR}",
+    "UCPRIMARYQR" : {
+      "AET" : "${PRIMARY_DICOM_SOURCE_AE_TITLE}",
+      "Port" : "${PRIMARY_DICOM_SOURCE_PORT}",
+      "Host" : "${PRIMARY_DICOM_SOURCE_IP_ADDR}",
+      "Manufacturer" : "Generic"
+    },
+    "UCSECONDARYQR" : {
+      "AET" : "${SECONDARY_DICOM_SOURCE_AE_TITLE}",
+      "Port" : "${SECONDARY_DICOM_SOURCE_PORT}",
+      "Host" : "${SECONDARY_DICOM_SOURCE_IP_ADDR}",
       "Manufacturer" : "Generic"
     },
     "PIXLR" : {

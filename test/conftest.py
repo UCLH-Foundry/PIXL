@@ -149,7 +149,7 @@ def _setup_pixl_cli(ftps_server: PixlFTPServer, _populate_vna: None) -> Generato
         timeout=600,
     )
     # poll here for two minutes to check for imaging to be processed, printing progress
-    wait_for_images_to_be_exported(181, 5, 15)
+    wait_for_images_to_be_exported(211, 5, 15)
     yield
     run_subprocess(
         [
@@ -173,7 +173,7 @@ def _setup_pixl_cli_dicomweb(_populate_vna: None) -> Generator:
         timeout=600,
     )
     # poll here for two minutes to check for imaging to be processed, printing progress
-    wait_for_images_to_be_exported(181, 5, 15)
+    wait_for_images_to_be_exported(211, 5, 15)
     yield
     run_subprocess(
         [

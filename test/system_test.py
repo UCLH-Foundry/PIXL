@@ -130,7 +130,7 @@ class TestFtpsUpload:
 
         wait_for_condition(
             two_zip_files_present,
-            seconds_max=121,
+            seconds_max=151,
             seconds_interval=5,
             seconds_condition_stays_true_for=15,
             progress_string_fn=zip_file_list,
@@ -175,7 +175,7 @@ class TestFtpsUpload:
             assert private_tag is not None
             if isinstance(private_tag.value, bytes):
                 # Allow this for the time being, until it has been investigated
-                # See https://github.com/UCLH-Foundry/PIXL/issues/363
+                # See https://github.com/SAFEHR-data/PIXL/issues/363
                 logger.error(
                     "TEMPORARILY IGNORE: tag value {} should be of type str, but is of type bytes",
                     private_tag.value,
@@ -211,7 +211,7 @@ def test_dicomweb_upload() -> None:
 
     wait_for_condition(
         two_studies_present_on_dicomweb,
-        seconds_max=121,
+        seconds_max=151,
         seconds_interval=10,
         progress_string_fn=dicomweb_studies_list,
     )

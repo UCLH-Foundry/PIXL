@@ -179,7 +179,7 @@ def test_anonymise_and_validate_as_external_user() -> None:
 
 
 # TODO: test that anonymise_and_validate_dicom() works as expected
-# https://github.com/UCLH-Foundry/PIXL/issues/418
+# https://github.com/SAFEHR-data/PIXL/issues/418
 
 
 def test_anonymisation_with_overrides(
