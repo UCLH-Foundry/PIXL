@@ -127,10 +127,10 @@ class Orthanc(ABC):
             await self.delete(f"/studies/{study_id}")
             raise
 
-    async def retrieve_from_remote(self, query_id: str) -> str:
+    async def retrieve_from_remote(self, query_id: str, timeout: int) -> str:
         response = await self._post(
             f"/queries/{query_id}/retrieve",
-            data={"TargetAet": self.aet, "Synchronous": False},
+            data={"TargetAet": self.aet, "Synchronous": False, "Timeout": timeout + 60},
         )
         return str(response["ID"])
 
