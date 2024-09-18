@@ -250,4 +250,5 @@ class PIXLRawOrthanc(Orthanc):
 
     async def send_study_to_anon(self, resource_id: str) -> Any:
         """Send study to orthanc anon."""
+        logger.debug("Sending resource to anon {}", resource_id)
         return await self._post("/send-to-anon", data={"ResourceId": resource_id})
