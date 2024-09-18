@@ -5,6 +5,7 @@
     "EnableIndex" : true,
     "EnableStorage" : false,
     "ConnectionUri" : "postgresql://${PIXL_DB_USER}:${PIXL_DB_PASSWORD}@${PIXL_DB_HOST}:${PIXL_DB_PORT}/${PIXL_DB_NAME}",
-    "Lock" : true
+    "Lock" : true,
+    "TransactionMode": "ReadCommitted"  // Allow multiple threads to write to database
   }
 }
