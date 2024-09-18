@@ -130,12 +130,13 @@ async def _delete_old_studies(
         resources,
         key=lambda resource: datetime.datetime.fromisoformat(resource["LastUpdate"]),
     )
-    logger.debug(
-        "Found {} resources for study, only keeping the last updated resource: {}",
-        len(sorted_resources),
-        sorted_resources,
-    )
     most_recent_resource = sorted_resources.pop(-1)
+    if sorted_resources:
+        logger.debug(
+            "Found {} resources for study, only keeping the last updated resource: {}",
+            len(sorted_resources) + 1,
+            most_recent_resource,
+        )
     for delete_resource in sorted_resources:
         await orthanc_raw.delete(f"/studies/{delete_resource['ID']}")
 
