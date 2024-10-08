@@ -103,8 +103,6 @@ class PixlConsumer(PixlQueueInterface):
                 discard,
                 message.priority,
             )
-            await asyncio.sleep(1)
-            await message.reject(requeue=False)
             with PixlProducer(
                 queue_name="imaging-secondary",
                 host=config("RABBITMQ_HOST"),
@@ -113,6 +111,7 @@ class PixlConsumer(PixlQueueInterface):
                 password=config("RABBITMQ_PASSWORD"),
             ) as producer:
                 producer.publish([pixl_message], priority=message.priority)
+            await message.reject(requeue=False)
         except PixlOutOfHoursError as nack_requeue:
             logger.trace(
                 "Nack and requeue message: {} from {}", pixl_message.identifier, nack_requeue
