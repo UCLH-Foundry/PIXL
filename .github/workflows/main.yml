@@ -108,15 +108,6 @@ jobs:
             - name: Create .secrets.env
               run: touch test/.secrets.env
 
-            - name: Build test services
-              working-directory: test
-              run: |
-                  docker compose build
-
-            - name: Build services
-              run: |
-                  docker compose build
-
             - name: Run tests
               working-directory: test
               env:
@@ -129,7 +120,24 @@ jobs:
                   HASHER_API_AZ_TENANT_ID: ${{ secrets.EXPORT_AZ_TENANT_ID }}
                   HASHER_API_AZ_KEY_VAULT_NAME: ${{ secrets.EXPORT_AZ_KEY_VAULT_NAME }}
               run: |
-                  ./run-system-test.sh coverage
+                  # We need PIXL_USER_UID and PIXL_USER_GID from the test env file.
+                  source .env
+                  # Set up as per docker_perms.md
+                  # Most importantly, the pixl user is *not* in the docker group, and
+                  # the default "runner" user is added to the pixl group.
+                  sudo --non-interactive groupadd --gid $PIXL_USER_GID pixl
+                  sudo --non-interactive useradd --uid $PIXL_USER_UID --gid pixl pixl
+                  sudo --non-interactive usermod --append --groups pixl runner
+                  host_export_root_dir=../projects/exports
+                  sudo --non-interactive chown -R pixl:pixl "$host_export_root_dir"
+                  sudo --non-interactive chmod -R u=rwx,g=rwxs,o= "$host_export_root_dir"
+                  sudo --non-interactive setfacl -R -m d:g::rwX  "$host_export_root_dir"
+                  # The top-level commands are still run as the GHA "runner" user, which
+                  # is analogous to a human user on the GAE bringing up a PIXL instance.
+                  # The sudo command is needed to make it run in a new shell
+                  # so that the new group (see usermod above) is picked up.
+                  # PATH needs to be explicitly mentioned to be passed through.
+                  sudo --non-interactive --preserve-env --preserve-env=PATH -u runner ./run-system-test.sh coverage
                   echo FINISHED SYSTEM TEST SCRIPT
 
             - name: Dump queue docker logs for debugging
@@ -177,6 +185,12 @@ jobs:
               run: |
                   docker logs -t system-test-dicomweb-server-1 2>&1
 
+
+            - name: View filesystem for debugging
+              if: ${{ failure() }}
+              run: |
+                  # just in case the error is caused by permissions, make sure all files are seen
+                  sudo --non-interactive  ls -laR
 
             - name: Upload coverage reports to Codecov
               uses: codecov/codecov-action@e28ff129e5465c2c0dcc6f003fc735cb6ae0c673 # v4.5.0

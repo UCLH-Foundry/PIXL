@@ -15,6 +15,7 @@
 set -euxo pipefail
 BIN_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 PACKAGE_DIR="${BIN_DIR%/*}"
+EXPORTS_DIR="${PACKAGE_DIR}/projects/exports"
 cd "${PACKAGE_DIR}/test"
 
 setup() {
@@ -27,15 +28,17 @@ setup() {
     docker compose --env-file .env -p system-test up --wait -d --build --remove-orphans
     # Warning: Requires to be run from the project root
     (
-    	cd "${PACKAGE_DIR}"
-    	docker compose --env-file test/.env --env-file test/.secrets.env -p system-test up --wait -d --build
+      cd "${PACKAGE_DIR}"
+      docker compose --env-file test/.env --env-file test/.secrets.env -p system-test up --wait -d --build
     )
 }
 
 teardown() {
     (
-    	cd "${PACKAGE_DIR}"
-    	docker compose -f docker-compose.yml -f test/docker-compose.yml -p system-test down --volumes
+      cd "${PACKAGE_DIR}"
+      rm -r "${EXPORTS_DIR}/test-extract-uclh-omop-cdm-dicomweb/"
+      rm -r "${EXPORTS_DIR}/test-extract-uclh-omop-cdm/"
+      docker compose -f docker-compose.yml -f test/docker-compose.yml -p system-test down --volumes
     )
 }
 

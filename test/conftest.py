@@ -16,11 +16,13 @@
 # ruff: noqa: C408 dict() makes test data easier to read and write
 import os
 from collections.abc import Generator
+from functools import partial, update_wrapper
 from pathlib import Path
 from typing import Any
 
-from core.db.models import Base
-from sqlalchemy import URL, create_engine
+from core.db.models import Base, Image
+from core.db.queries import engine
+from sqlalchemy import URL, cast, create_engine, not_
 from sqlalchemy.orm import sessionmaker
 
 # Setting env variables before loading modules
@@ -34,9 +36,8 @@ import pytest
 import requests
 from pytest_pixl.dicom import generate_dicom_dataset
 from pytest_pixl.ftpserver import PixlFTPServer
-from pytest_pixl.helpers import run_subprocess
+from pytest_pixl.helpers import run_subprocess, wait_for_condition
 from pytest_pixl.plugin import FtpHostAddress
-from utils import wait_for_images_to_be_exported
 
 pytest_plugins = "pytest_pixl"
 
@@ -138,6 +139,44 @@ def _upload_dicom_instance(dicom_dir: Path, **kwargs: Any) -> None:
     ds.save_as(str(test_dcm_file), write_like_original=False)
     # I think we can skip writing to disk!
     _upload_to_vna(test_dcm_file)
+
+
+def wait_for_images_to_be_exported(
+    seconds_max: int,
+    seconds_interval: int,
+    seconds_condition_stays_true_for: int,
+    min_studies: int = 2,
+) -> None:
+    """
+    Query pixl DB to ensure that images have been processed and exported.
+    If they haven't within the time limit, raise a TimeoutError
+    """
+    studies: list[Image] = []
+
+    def at_least_n_studies_exported(n_studies: int) -> bool:
+        nonlocal studies
+
+        PixlSession = sessionmaker(engine)
+        with PixlSession() as session:
+            studies = cast(
+                list[Image],
+                session.query(Image).filter(not_(Image.exported_at.is_(None))).all(),
+            )
+        return len(studies) >= n_studies
+
+    condition = partial(at_least_n_studies_exported, min_studies)
+    update_wrapper(condition, at_least_n_studies_exported)
+
+    def list_studies() -> str:
+        return f"Expecting at least {min_studies} studies.\nexported studies: {studies}"
+
+    wait_for_condition(
+        condition,
+        seconds_max=seconds_max,
+        seconds_interval=seconds_interval,
+        progress_string_fn=list_studies,
+        seconds_condition_stays_true_for=seconds_condition_stays_true_for,
+    )
 
 
 @pytest.fixture(scope="session")

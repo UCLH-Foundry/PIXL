@@ -25,8 +25,12 @@ x-proxy-common: &proxy-common
     NO_PROXY: *no-proxy
     no_proxy: *no-proxy
 
+x-pixl-uid-gid: &pixl-uid-gid
+    PIXL_USER_UID: ${PIXL_USER_UID}
+    PIXL_USER_GID: ${PIXL_USER_GID}
+
 x-build-args-common: &build-args-common
-    <<: [*proxy-common]
+    <<: [*proxy-common, *pixl-uid-gid]
 
 x-pixl-common-env: &pixl-common-env
     DEBUG: ${DEBUG}
@@ -74,8 +78,10 @@ services:
     hasher-api:
         build:
             context: .
-            dockerfile: ./docker/hasher-api/Dockerfile
+            dockerfile: ./docker/pixl-python/Dockerfile
+            target: hasher_api
             args:
+                PIXL_PACKAGE_DIR: hasher
                 <<: *build-args-common
         environment:
             <<: [*proxy-common, *pixl-common-env]
@@ -93,7 +99,6 @@ services:
         networks:
             - pixl-net
         healthcheck:
-            test: ["CMD", "curl", "-f", "http://hasher-api:8000/heart-beat"]
             interval: 10s
             timeout: 30s
             retries: 5
@@ -102,7 +107,8 @@ services:
     orthanc-anon:
         build:
             context: .
-            dockerfile: ./docker/orthanc-anon/Dockerfile
+            dockerfile: ./docker/orthanc/Dockerfile
+            target: pixl_orthanc_anon
             args:
                 <<: *build-args-common
                 ORTHANC_CONCURRENT_JOBS: ${ORTHANC_CONCURRENT_JOBS}
@@ -167,7 +173,8 @@ services:
     orthanc-raw:
         build:
             context: .
-            dockerfile: ./docker/orthanc-raw/Dockerfile
+            dockerfile: ./docker/orthanc/Dockerfile
+            target: pixl_orthanc_raw
             args:
                 <<: *build-args-common
                 ORTHANC_RAW_MAXIMUM_STORAGE_SIZE: ${ORTHANC_RAW_MAXIMUM_STORAGE_SIZE}
@@ -245,8 +252,10 @@ services:
     export-api:
         build:
             context: .
-            dockerfile: ./docker/export-api/Dockerfile
+            dockerfile: ./docker/pixl-python/Dockerfile
+            target: export_api
             args:
+                PIXL_PACKAGE_DIR: pixl_export
                 <<: *build-args-common
         environment:
             <<:
@@ -285,14 +294,16 @@ services:
         extra_hosts:
             - "host.docker.internal:host-gateway"
         volumes:
-            - ${PWD}/projects/exports:/run/projects/exports
+            - ${PWD}/projects/exports:/run/projects/exports:ro
             - ${PWD}/projects/configs:/${PROJECT_CONFIGS_DIR:-/projects/configs}:ro
 
     imaging-api:
         build:
             context: .
-            dockerfile: ./docker/imaging-api/Dockerfile
+            dockerfile: ./docker/pixl-python/Dockerfile
+            target: imaging_api
             args:
+                PIXL_PACKAGE_DIR: pixl_imaging
                 <<: *build-args-common
         depends_on:
             queue:
@@ -300,14 +311,13 @@ services:
             orthanc-raw:
                 condition: service_healthy
         healthcheck:
-            test: curl -f http://0.0.0.0:8000/heart-beat
             interval: 10s
             timeout: 30s
             retries: 5
         networks:
             - pixl-net
         environment:
-            <<: [*pixl-rabbit-mq, *proxy-common, *pixl-common-env]
+            <<: [*pixl-rabbit-mq, *proxy-common, *pixl-common-env, *pixl-db]
             ORTHANC_RAW_URL: ${ORTHANC_RAW_URL}
             ORTHANC_RAW_USERNAME: ${ORTHANC_RAW_USERNAME}
             ORTHANC_RAW_PASSWORD: ${ORTHANC_RAW_PASSWORD}
@@ -316,11 +326,6 @@ services:
             PRIMARY_DICOM_SOURCE_MODALITY: ${PRIMARY_DICOM_SOURCE_MODALITY}
             SECONDARY_DICOM_SOURCE_MODALITY: ${SECONDARY_DICOM_SOURCE_MODALITY}
             SKIP_ALEMBIC: ${SKIP_ALEMBIC}
-            PIXL_DB_HOST: ${PIXL_DB_HOST}
-            PIXL_DB_PORT: ${PIXL_DB_PORT}
-            PIXL_DB_NAME: ${PIXL_DB_NAME}
-            PIXL_DB_USER: ${PIXL_DB_USER}
-            PIXL_DB_PASSWORD: ${PIXL_DB_PASSWORD}
             PIXL_DICOM_TRANSFER_TIMEOUT: ${PIXL_DICOM_TRANSFER_TIMEOUT}
             PIXL_QUERY_TIMEOUT: ${PIXL_QUERY_TIMEOUT}
             PIXL_MAX_MESSAGES_IN_FLIGHT: ${PIXL_MAX_MESSAGES_IN_FLIGHT}

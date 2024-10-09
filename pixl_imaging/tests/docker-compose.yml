@@ -31,7 +31,8 @@ x-orthanc-healthcheck: &orthanc-healthcheck
 
 services:
     vna-qr:
-        image: orthancteam/orthanc:24.3.3
+        image: orthancteam/orthanc:24.4.0
+        user: orthanc
         environment:
             ORTHANC_NAME: "PRIMARYQR"
             ORTHANC_USERNAME: "orthanc"
@@ -48,7 +49,7 @@ services:
             - ../../test/vna_config/:/run/secrets:ro
         <<: *orthanc-healthcheck
     pacs-qr:
-        image: orthancteam/orthanc:24.3.3
+        image: orthancteam/orthanc:24.4.0
         environment:
             ORTHANC_NAME: "SECONDARYQR"
             ORTHANC_USERNAME: "orthanc"
@@ -68,8 +69,10 @@ services:
     orthanc-raw:
         build:
             context: ../../
-            dockerfile: ./docker/orthanc-raw/Dockerfile
+            dockerfile: ./docker/orthanc/Dockerfile
+            target: pixl_orthanc_raw
             args:
+                PIXL_USER_GID: 9999
                 PIXL_DICOM_TRANSFER_TIMEOUT: 30
         environment:
             ORTHANC_NAME: "PIXL: Raw"

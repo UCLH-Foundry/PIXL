@@ -32,6 +32,7 @@ services:
 
     orthanc:
         image: orthancteam/orthanc:24.4.0
+        user: orthanc
         platform: linux/amd64
         environment:
             ORTHANC_NAME: "orthanc"
@@ -57,6 +58,7 @@ services:
 
     dicomweb-server:
         image: orthancteam/orthanc:24.4.0
+        user: orthanc
         platform: linux/amd64
         environment:
             ORTHANC_NAME: "dicomweb"

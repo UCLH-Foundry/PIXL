@@ -19,7 +19,8 @@ networks:
 
 services:
     vna-qr:
-        image: orthancteam/orthanc:24.3.3
+        image: orthancteam/orthanc:24.4.0
+        user: orthanc
         platform: linux/amd64
         environment:
             ORTHANC_NAME: ${PRIMARY_DICOM_SOURCE_AE_TITLE}
@@ -45,6 +46,7 @@ services:
             pixl-net:
     dicomweb-server:
         image: orthancteam/orthanc:24.4.0
+        user: orthanc
         platform: linux/amd64
         environment:
             ORTHANC_NAME: "dicomweb"
